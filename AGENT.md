@@ -91,6 +91,15 @@ type TrackMetadata struct {
 	BPM          float64   `json:"bpm"`
 	KeySignature string    `json:"keySignature"`
 	Waveform     []float32 `json:"waveform"`
+	Artist       string    `json:"artist"`
+	Genre        string    `json:"genre"`
+}
+
+type SoundCloudResult struct {
+	Title    string  `json:"title"`
+	Uploader string  `json:"uploader"`
+	URL      string  `json:"url"`
+	Duration float64 `json:"duration"`
 }
 
 type Playlist struct {
@@ -121,6 +130,8 @@ func (a *App) CreatePlaylist(name string) error
 func (a *App) DeletePlaylist(name string) error
 func (a *App) AddTrackToPlaylist(playlistName string, trackPath string) error
 func (a *App) RemoveTrackFromPlaylist(playlistName string, trackPath string) error
+func (a *App) SearchSoundCloud(query string) ([]SoundCloudResult, error)
+func (a *App) DownloadFromSoundCloud(trackURL string) error
 ```
 
 #### Examples of API Usage:
@@ -144,6 +155,14 @@ await App.CreatePlaylist("Chill Beats");
 await App.AddTrackToPlaylist("Chill Beats", tracks[0].filePath);
 await App.RemoveTrackFromPlaylist("Chill Beats", tracks[0].filePath);
 await App.DeletePlaylist("Chill Beats");
+
+// SoundCloud Integration
+const results = await App.SearchSoundCloud("lofi study");
+console.log(`Found ${results.length} results on SoundCloud.`);
+if (results.length > 0) {
+    // Download first track to ~/.0xplayer/soundcloud/
+    await App.DownloadFromSoundCloud(results[0].url);
+}
 ```
 
 ---
@@ -204,4 +223,10 @@ wails build
 | 1 | FEATURE | `app.go:258-385`, `App.tsx:170-1080` | User requested support for custom user-created playlists stored persistently in `playlists.json`. | Add custom Playlist models, persistence layer, Wails bindings, UI Sidebar playlists tab, inline creation, row add-to-playlist dropdown popups and navigation context updates. |
 | 2 | BUG | `audio_engine_test.go:10,272` | Unused strings package import and type mismatch in test suite logger once variable initialization caused test build failure. | Remove strings import and use a pointer reference for Once initialization in test setup. |
 | 3 | BUG | `logger_test.go:37-240` | Logger tests failed on Windows because the test suite only set the `HOME` environment variable, neglecting `USERPROFILE` which Go's `os.UserHomeDir` checks on Windows. | Update logger test cases to save, set, and defer recovery of the `USERPROFILE` environment variable to match the temporary directory. |
+
+### Audit Cycle 5 — 2026-06-19
+
+| # | Severity | File | Issue | Fix |
+|---|----------|------|-------|-----|
+| 1 | FEATURE | `app.go:390-475`, `App.tsx:20-1200` | SoundCloud search, download, and cataloging features with automatic metadata extraction. | Implement `SearchSoundCloud` and `DownloadFromSoundCloud` backend methods utilizing `yt-dlp`. Parse ID3 tags via `github.com/dhowden/tag` or parse track name if missing. Render search input and results table with importing action on frontend, and add sidebar filter selectors for Artist and Genre with cascading pre-filtering. |
 

@@ -19,6 +19,8 @@ type TrackMetadata struct {
 	BPM          float64   `json:"bpm"`
 	KeySignature string    `json:"keySignature"`
 	Waveform     []float32 `json:"waveform"`
+	Artist       string    `json:"artist"`
+	Genre        string    `json:"genre"`
 }
 
 func InitAudioEngine(sampleRate int, channels int) bool {

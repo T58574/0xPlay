@@ -8,6 +8,8 @@ export function CreatePlaylist(arg1:string):Promise<void>;
 
 export function DeletePlaylist(arg1:string):Promise<void>;
 
+export function DownloadFromSoundCloud(arg1:string):Promise<void>;
+
 export function GetMusicDir():Promise<string>;
 
 export function GetPlaylists():Promise<Array<main.Playlist>>;
@@ -31,6 +33,8 @@ export function Play(arg1:number):Promise<void>;
 export function RemoveTrackFromPlaylist(arg1:string,arg2:string):Promise<void>;
 
 export function SavePlaylists(arg1:Array<main.Playlist>):Promise<void>;
+
+export function SearchSoundCloud(arg1:string):Promise<Array<main.SoundCloudResult>>;
 
 export function ScanMusicDir():Promise<Array<main.TrackMetadata>>;
 

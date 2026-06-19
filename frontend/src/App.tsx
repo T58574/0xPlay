@@ -22,7 +22,9 @@ import {
     CreatePlaylist,
     DeletePlaylist,
     AddTrackToPlaylist,
-    RemoveTrackFromPlaylist
+    RemoveTrackFromPlaylist,
+    SearchSoundCloud,
+    DownloadFromSoundCloud
 } from "../wailsjs/go/main/App";
 
 interface TrackInfo {
@@ -31,6 +33,15 @@ interface TrackInfo {
     bpm: number;
     keySignature: string;
     waveform: number[];
+    artist?: string;
+    genre?: string;
+}
+
+interface SoundCloudResult {
+    title: string;
+    uploader: string;
+    url: string;
+    duration: number;
 }
 
 interface PlaylistInfo {
@@ -203,6 +214,13 @@ function App() {
     const [newPlaylistName, setNewPlaylistName] = useState<string>('');
     const [activePlaylistMenuTrack, setActivePlaylistMenuTrack] = useState<string | null>(null);
     const [currentTheme, setCurrentTheme] = useState<string>('emerald');
+    const [soundcloudQuery, setSoundcloudQuery] = useState<string>('');
+    const [soundcloudResults, setSoundcloudResults] = useState<SoundCloudResult[]>([]);
+    const [isDownloading, setIsDownloading] = useState<boolean>(false);
+    const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
+    const [searchLoading, setSearchLoading] = useState<boolean>(false);
+    const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
+    const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
     const themes = {
         emerald: { accent: '#22C55E', dark: '#15803d', hover: '#2cd46e', bgStart: '#1E1B4B', bgEnd: '#080811' },
@@ -298,9 +316,20 @@ function App() {
         ? libraryTracks.filter(t => playlists.find(p => p.name === selectedPlaylist)?.trackPaths?.includes(t.filePath))
         : libraryTracks;
 
+    const availableArtists = Array.from(new Set(libraryTracks.map(t => t.artist || 'Unknown Artist'))).filter(Boolean).sort();
+    const availableGenres = Array.from(new Set(libraryTracks.map(t => t.genre || 'Unknown Genre'))).filter(Boolean).sort();
+
     const filteredTracks = currentPlaylistTracks.filter(track => {
         const filename = getFilename(track.filePath).toLowerCase();
-        return filename.includes(searchQuery.toLowerCase());
+        const artist = (track.artist || 'Unknown Artist').toLowerCase();
+        const genre = (track.genre || 'Unknown Genre').toLowerCase();
+        const query = searchQuery.toLowerCase();
+        
+        const matchesQuery = filename.includes(query) || artist.includes(query) || genre.includes(query);
+        const matchesArtist = !selectedArtist || (track.artist || 'Unknown Artist') === selectedArtist;
+        const matchesGenre = !selectedGenre || (track.genre || 'Unknown Genre') === selectedGenre;
+        
+        return matchesQuery && matchesArtist && matchesGenre;
     });
 
     const totalDuration = currentPlaylistTracks.reduce((acc, t) => acc + t.durationSec, 0);
@@ -383,6 +412,37 @@ function App() {
             await loadPlaylists();
         } catch (err) {
             uiLog('ERROR', `RemoveTrackFromPlaylist error: ${String(err)}`);
+        }
+    };
+
+    const handleSoundCloudSearch = async () => {
+        if (!soundcloudQuery.trim()) return;
+        setSearchLoading(true);
+        try {
+            uiLog('INFO', `Searching SoundCloud for: ${soundcloudQuery}`);
+            const results = await SearchSoundCloud(soundcloudQuery);
+            setSoundcloudResults(results || []);
+            uiLog('INFO', `SoundCloud search returned ${results?.length ?? 0} results`);
+        } catch (err) {
+            uiLog('ERROR', `SoundCloud search error: ${String(err)}`);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
+    const handleSoundCloudDownload = async (url: string) => {
+        setDownloadingUrl(url);
+        setIsDownloading(true);
+        try {
+            uiLog('INFO', `Downloading from SoundCloud: ${url}`);
+            await DownloadFromSoundCloud(url);
+            uiLog('INFO', `Successfully downloaded from SoundCloud: ${url}`);
+            await loadLibrary();
+        } catch (err) {
+            uiLog('ERROR', `SoundCloud download error: ${String(err)}`);
+        } finally {
+            setDownloadingUrl(null);
+            setIsDownloading(false);
         }
     };
 
@@ -912,6 +972,54 @@ function App() {
                         </div>
                     </div>
 
+                    <div className="categories-sidebar-section">
+                        <div className="categories-sidebar-header">
+                            <span className="theme-section-title">ARTISTS</span>
+                            {selectedArtist && (
+                                <button className="clear-filter-btn" onClick={() => setSelectedArtist(null)}>Clear</button>
+                            )}
+                        </div>
+                        <div className="sidebar-categories-list">
+                            {availableArtists.map(artist => (
+                                <button
+                                    key={artist}
+                                    className={`sidebar-category-item-btn ${selectedArtist === artist ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedArtist(selectedArtist === artist ? null : artist);
+                                        setSelectedPlaylist(null);
+                                        setActiveTab('library');
+                                    }}
+                                >
+                                    <span>{artist}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="categories-sidebar-section">
+                        <div className="categories-sidebar-header">
+                            <span className="theme-section-title">GENRES</span>
+                            {selectedGenre && (
+                                <button className="clear-filter-btn" onClick={() => setSelectedGenre(null)}>Clear</button>
+                            )}
+                        </div>
+                        <div className="sidebar-categories-list">
+                            {availableGenres.map(genre => (
+                                <button
+                                    key={genre}
+                                    className={`sidebar-category-item-btn ${selectedGenre === genre ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedGenre(selectedGenre === genre ? null : genre);
+                                        setSelectedPlaylist(null);
+                                        setActiveTab('library');
+                                    }}
+                                >
+                                    <span>{genre}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="theme-selector-section">
                         <span className="theme-section-title">THEME PALETTE</span>
                         <div className="theme-buttons-grid">
@@ -988,7 +1096,69 @@ function App() {
                                         <button className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
                                     )}
                                 </div>
+
+                                <div className="soundcloud-search-container">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search SoundCloud..." 
+                                        value={soundcloudQuery}
+                                        onChange={(e) => setSoundcloudQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSoundCloudSearch();
+                                        }}
+                                        className="soundcloud-input"
+                                    />
+                                    <button 
+                                        className="soundcloud-search-btn" 
+                                        onClick={handleSoundCloudSearch}
+                                        disabled={searchLoading}
+                                    >
+                                        {searchLoading ? 'Searching...' : 'Search SC'}
+                                    </button>
+                                </div>
                             </div>
+
+                            {soundcloudResults.length > 0 && (
+                                <div className="soundcloud-results-panel">
+                                    <div className="soundcloud-results-header">
+                                        <h3>SoundCloud Results</h3>
+                                        <button className="clear-sc-results-btn" onClick={() => setSoundcloudResults([])}>Clear Results</button>
+                                    </div>
+                                    <div className="soundcloud-results-table-container">
+                                        <table className="soundcloud-results-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>TITLE</th>
+                                                    <th>ARTIST</th>
+                                                    <th>DURATION</th>
+                                                    <th style={{ width: '120px', textAlign: 'center' }}>ACTION</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {soundcloudResults.map((res) => {
+                                                    const isTrackDownloading = downloadingUrl === res.url;
+                                                    return (
+                                                        <tr key={res.url}>
+                                                            <td>{res.title}</td>
+                                                            <td>{res.uploader}</td>
+                                                            <td>{formatTime(res.duration)}</td>
+                                                            <td style={{ textAlign: 'center' }}>
+                                                                <button
+                                                                    className="sc-import-btn"
+                                                                    onClick={() => handleSoundCloudDownload(res.url)}
+                                                                    disabled={isTrackDownloading || isDownloading}
+                                                                >
+                                                                    {isTrackDownloading ? 'Importing...' : 'Import'}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
 
                             {filteredTracks.length > 0 ? (
                                 <div className="tracks-list-container">
@@ -1021,7 +1191,14 @@ function App() {
                                                                 <span className="row-play-btn"><RowPlayIcon /></span>
                                                             )}
                                                         </td>
-                                                        <td className="track-title-cell">{filename}</td>
+                                                        <td className="track-title-cell">
+                                                            <div className="track-title-main">{filename}</div>
+                                                            {(track.artist || track.genre) && (
+                                                                <div className="track-artist-sub">
+                                                                    {track.artist || 'Unknown Artist'} • {track.genre || 'Unknown Genre'}
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                         <td>{track.bpm.toFixed(1)}</td>
                                                         <td className="glowing-key">{track.keySignature}</td>
                                                         <td>{formatTime(track.durationSec)}</td>

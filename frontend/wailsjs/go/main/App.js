@@ -14,6 +14,10 @@ export function DeletePlaylist(arg1) {
   return window['go']['main']['App']['DeletePlaylist'](arg1);
 }
 
+export function DownloadFromSoundCloud(arg1) {
+  return window['go']['main']['App']['DownloadFromSoundCloud'](arg1);
+}
+
 export function GetMusicDir() {
   return window['go']['main']['App']['GetMusicDir']();
 }
@@ -60,6 +64,10 @@ export function RemoveTrackFromPlaylist(arg1, arg2) {
 
 export function SavePlaylists(arg1) {
   return window['go']['main']['App']['SavePlaylists'](arg1);
+}
+
+export function SearchSoundCloud(arg1) {
+  return window['go']['main']['App']['SearchSoundCloud'](arg1);
 }
 
 export function ScanMusicDir() {

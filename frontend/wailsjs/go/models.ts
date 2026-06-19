@@ -20,6 +20,8 @@ export namespace main {
 	    bpm: number;
 	    keySignature: string;
 	    waveform: number[];
+	    artist: string;
+	    genre: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TrackMetadata(source);
@@ -32,6 +34,26 @@ export namespace main {
 	        this.bpm = source["bpm"];
 	        this.keySignature = source["keySignature"];
 	        this.waveform = source["waveform"];
+	        this.artist = source["artist"];
+	        this.genre = source["genre"];
+	    }
+	}
+	export class SoundCloudResult {
+	    title: string;
+	    uploader: string;
+	    url: string;
+	    duration: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SoundCloudResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.title = source["title"];
+	        this.uploader = source["uploader"];
+	        this.url = source["url"];
+	        this.duration = source["duration"];
 	    }
 	}
 
