@@ -22,6 +22,12 @@ desktop.ini
 # --- NODE ---
 node_modules/
 
+# --- GO & APP ARTIFACTS ---
+SoundPlayer
+coverage.out
+coverage
+*.md5
+
 # --- PYTHON CORE ---
 __pycache__/
 *.py[cod]
