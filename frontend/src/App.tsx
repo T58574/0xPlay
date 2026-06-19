@@ -480,16 +480,28 @@ function App() {
             const updatedPlaying = [...st.playing] as [boolean, boolean];
             const updatedPos = [...st.positions] as [number, number];
             
-            await Promise.all([0, 1].map(async (slot) => {
-                if (st.tracks[slot]) {
-                    const isPlay = await IsPlaying(slot);
-                    updatedPlaying[slot] = isPlay;
-                    if (isPlay) {
-                        const pos = await GetPosition(slot);
-                        updatedPos[slot] = pos;
+            await Promise.all([
+                (async () => {
+                    if (st.tracks[0]) {
+                        const isPlay = await IsPlaying(0);
+                        updatedPlaying[0] = isPlay;
+                        if (isPlay) {
+                            const pos = await GetPosition(0);
+                            updatedPos[0] = pos;
+                        }
                     }
-                }
-            }));
+                })(),
+                (async () => {
+                    if (st.tracks[1]) {
+                        const isPlay = await IsPlaying(1);
+                        updatedPlaying[1] = isPlay;
+                        if (isPlay) {
+                            const pos = await GetPosition(1);
+                            updatedPos[1] = pos;
+                        }
+                    }
+                })()
+            ]);
             
             setPlaying(updatedPlaying);
             setPositions(updatedPos);
