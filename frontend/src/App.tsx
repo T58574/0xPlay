@@ -480,7 +480,7 @@ function App() {
             const updatedPlaying = [...st.playing] as [boolean, boolean];
             const updatedPos = [...st.positions] as [number, number];
             
-            for (let slot = 0; slot < 2; slot++) {
+            await Promise.all([0, 1].map(async (slot) => {
                 if (st.tracks[slot]) {
                     const isPlay = await IsPlaying(slot);
                     updatedPlaying[slot] = isPlay;
@@ -489,7 +489,7 @@ function App() {
                         updatedPos[slot] = pos;
                     }
                 }
-            }
+            }));
             
             setPlaying(updatedPlaying);
             setPositions(updatedPos);
