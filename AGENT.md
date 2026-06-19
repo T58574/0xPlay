@@ -93,6 +93,11 @@ type TrackMetadata struct {
 	Waveform     []float32 `json:"waveform"`
 }
 
+type Playlist struct {
+	Name       string   `json:"name"`
+	TrackPaths []string `json:"trackPaths"`
+}
+
 type App struct {}
 
 func (a *App) LoadTrack(slot int, filePath string) (TrackMetadata, error)
@@ -110,6 +115,12 @@ func (a *App) SelectAudioFile() (string, error)
 func (a *App) GetMusicDir() (string, error)
 func (a *App) ScanMusicDir() ([]TrackMetadata, error)
 func (a *App) OpenMusicDir()
+func (a *App) GetPlaylists() ([]Playlist, error)
+func (a *App) SavePlaylists(playlists []Playlist) error
+func (a *App) CreatePlaylist(name string) error
+func (a *App) DeletePlaylist(name string) error
+func (a *App) AddTrackToPlaylist(playlistName string, trackPath string) error
+func (a *App) RemoveTrackFromPlaylist(playlistName string, trackPath string) error
 ```
 
 #### Examples of API Usage:
@@ -126,6 +137,13 @@ await App.Play(0);
 // Adjust mixing settings
 await App.ToggleAutoMix(true);
 await App.SetCrossfadeDuration(10.0);
+
+// Playlist Management
+const playlists = await App.GetPlaylists();
+await App.CreatePlaylist("Chill Beats");
+await App.AddTrackToPlaylist("Chill Beats", tracks[0].filePath);
+await App.RemoveTrackFromPlaylist("Chill Beats", tracks[0].filePath);
+await App.DeletePlaylist("Chill Beats");
 ```
 
 ---
@@ -178,4 +196,12 @@ wails build
 | 4 | PERFORMANCE | `app.go:149-175` | First launch directory scans with large libraries (>100 files) were slow due to repeated heavy audio analysis (FFT, autocorrelation, decoding). | Implement `cache.json` metadata storage in `ScanMusicDir`, checking file size and modification time before triggering audio analysis. Reduced test execution time from 47.6s to 0.3s (135x speedup). |
 | 5 | CRITICAL | `audio_engine.cpp:561-587` | Double initialization of the audio device (e.g. in test suites) caused access violation crashes (`exit status 0xc0000005`). | Add a safety check in `init_audio_engine` to invoke `cleanup_audio_engine` if `g_device_initialized` is true. |
 | 6 | LOGGING | `app.go:193-207`, `App.tsx:180-186` | Frontend UI logs were not synchronized with backend logs, making application flow debugging difficult. | Add a `LogFromJS` binding to Go app and forward all React `uiLog` entries directly to the unified `player.log` file. |
+
+### Audit Cycle 4 — 2026-06-19
+
+| # | Severity | File | Issue | Fix |
+|---|----------|------|-------|-----|
+| 1 | FEATURE | `app.go:258-385`, `App.tsx:170-1080` | User requested support for custom user-created playlists stored persistently in `playlists.json`. | Add custom Playlist models, persistence layer, Wails bindings, UI Sidebar playlists tab, inline creation, row add-to-playlist dropdown popups and navigation context updates. |
+| 2 | BUG | `audio_engine_test.go:10,272` | Unused strings package import and type mismatch in test suite logger once variable initialization caused test build failure. | Remove strings import and use a pointer reference for Once initialization in test setup. |
+| 3 | BUG | `logger_test.go:37-240` | Logger tests failed on Windows because the test suite only set the `HOME` environment variable, neglecting `USERPROFILE` which Go's `os.UserHomeDir` checks on Windows. | Update logger test cases to save, set, and defer recovery of the `USERPROFILE` environment variable to match the temporary directory. |
 

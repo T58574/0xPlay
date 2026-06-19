@@ -17,7 +17,12 @@ import {
     OpenMusicDir,
     SetCrossfadeDuration,
     LogFromJS,
-    GetSpectrum
+    GetSpectrum,
+    GetPlaylists,
+    CreatePlaylist,
+    DeletePlaylist,
+    AddTrackToPlaylist,
+    RemoveTrackFromPlaylist
 } from "../wailsjs/go/main/App";
 
 interface TrackInfo {
@@ -26,6 +31,11 @@ interface TrackInfo {
     bpm: number;
     keySignature: string;
     waveform: number[];
+}
+
+interface PlaylistInfo {
+    name: string;
+    trackPaths: string[];
 }
 
 const PlayIcon = () => (
@@ -154,6 +164,30 @@ const RepeatIcon = () => (
     </svg>
 );
 
+const PlusIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <line x1="10" y1="11" x2="10" y2="17" />
+        <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+);
+
+const MusicIconSmall = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+    </svg>
+);
+
 function App() {
     const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings'>('library');
     const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(8.0);
@@ -163,6 +197,11 @@ function App() {
     const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [dragPosition, setDragPosition] = useState<number | null>(null);
+    const [playlists, setPlaylists] = useState<PlaylistInfo[]>([]);
+    const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
+    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState<boolean>(false);
+    const [newPlaylistName, setNewPlaylistName] = useState<string>('');
+    const [activePlaylistMenuTrack, setActivePlaylistMenuTrack] = useState<string | null>(null);
     const [currentTheme, setCurrentTheme] = useState<string>('emerald');
 
     const themes = {
@@ -245,7 +284,8 @@ function App() {
         autoMix: false,
         libraryTracks: [] as TrackInfo[],
         shuffle: false,
-        repeat: false
+        repeat: false,
+        currentPlaylistTracks: [] as TrackInfo[]
     });
 
     const getFilename = (path: string) => {
@@ -254,12 +294,16 @@ function App() {
         return parts[parts.length - 1];
     };
 
-    const filteredTracks = libraryTracks.filter(track => {
+    const currentPlaylistTracks = selectedPlaylist
+        ? libraryTracks.filter(t => playlists.find(p => p.name === selectedPlaylist)?.trackPaths?.includes(t.filePath))
+        : libraryTracks;
+
+    const filteredTracks = currentPlaylistTracks.filter(track => {
         const filename = getFilename(track.filePath).toLowerCase();
         return filename.includes(searchQuery.toLowerCase());
     });
 
-    const totalDuration = libraryTracks.reduce((acc, t) => acc + t.durationSec, 0);
+    const totalDuration = currentPlaylistTracks.reduce((acc, t) => acc + t.durationSec, 0);
     const totalDurationStr = (() => {
         const h = Math.floor(totalDuration / 3600);
         const m = Math.floor((totalDuration % 3600) / 60);
@@ -280,6 +324,65 @@ function App() {
             uiLog('INFO', `loadLibrary: найдено ${list?.length ?? 0} треков`);
         } catch (err) {
             uiLog('ERROR', `loadLibrary: ошибка: ${String(err)}`);
+        }
+    };
+
+    const loadPlaylists = async () => {
+        try {
+            const list = await GetPlaylists();
+            setPlaylists(list || []);
+        } catch (err) {
+            uiLog('ERROR', `loadPlaylists error: ${String(err)}`);
+        }
+    };
+
+    const handleCreatePlaylistSubmit = async () => {
+        if (!newPlaylistName.trim()) {
+            setIsCreatingPlaylist(false);
+            return;
+        }
+        try {
+            await CreatePlaylist(newPlaylistName.trim());
+            uiLog('INFO', `Created playlist: ${newPlaylistName}`);
+            setNewPlaylistName('');
+            setIsCreatingPlaylist(false);
+            await loadPlaylists();
+        } catch (err) {
+            uiLog('ERROR', `CreatePlaylist error: ${String(err)}`);
+        }
+    };
+
+    const handleDeletePlaylist = async (name: string) => {
+        try {
+            await DeletePlaylist(name);
+            uiLog('INFO', `Deleted playlist: ${name}`);
+            if (selectedPlaylist === name) {
+                setSelectedPlaylist(null);
+            }
+            await loadPlaylists();
+        } catch (err) {
+            uiLog('ERROR', `DeletePlaylist error: ${String(err)}`);
+        }
+    };
+
+    const handleAddTrackToPlaylist = async (playlistName: string, trackPath: string) => {
+        try {
+            await AddTrackToPlaylist(playlistName, trackPath);
+            uiLog('INFO', `Added track ${trackPath} to playlist ${playlistName}`);
+            await loadPlaylists();
+            setActivePlaylistMenuTrack(null);
+        } catch (err) {
+            uiLog('ERROR', `AddTrackToPlaylist error: ${String(err)}`);
+        }
+    };
+
+    const handleRemoveTrackFromPlaylist = async (playlistName: string, trackPath: string) => {
+        try {
+            await RemoveTrackFromPlaylist(playlistName, trackPath);
+            uiLog('INFO', `Removed track ${trackPath} from playlist ${playlistName}`);
+            await loadPlaylists();
+        } catch (err) {
+            uiLog('ERROR', `RemoveTrackFromPlaylist error: ${String(err)}`);
         }
     };
 
@@ -426,31 +529,39 @@ function App() {
     };
 
     const handleNext = async () => {
-        if (libraryTracks.length === 0) return;
+        if (currentPlaylistTracks.length === 0) return;
         if (switchingRef.current) {
             uiLog('WARN', 'handleNext: уже идёт переключение — пропуск');
             return;
         }
-        let nextIndex = (currentTrackIndex + 1) % libraryTracks.length;
+        const currentTrack = libraryTracks[currentTrackIndex];
+        let playlistIndex = currentPlaylistTracks.findIndex(t => t.filePath === currentTrack?.filePath);
+        let nextPlaylistIndex = (playlistIndex + 1) % currentPlaylistTracks.length;
         if (shuffle) {
-            nextIndex = Math.floor(Math.random() * libraryTracks.length);
+            nextPlaylistIndex = Math.floor(Math.random() * currentPlaylistTracks.length);
         }
-        uiLog('INFO', `handleNext: ${currentTrackIndex} -> ${nextIndex}`);
-        await handlePlayLibraryTrack(nextIndex);
+        const nextTrack = currentPlaylistTracks[nextPlaylistIndex];
+        const nextOriginalIndex = libraryTracks.findIndex(t => t.filePath === nextTrack.filePath);
+        uiLog('INFO', `handleNext: ${currentTrackIndex} -> ${nextOriginalIndex}`);
+        await handlePlayLibraryTrack(nextOriginalIndex);
     };
 
     const handlePrev = async () => {
-        if (libraryTracks.length === 0) return;
+        if (currentPlaylistTracks.length === 0) return;
         if (switchingRef.current) {
             uiLog('WARN', 'handlePrev: уже идёт переключение — пропуск');
             return;
         }
-        let prevIndex = (currentTrackIndex - 1 + libraryTracks.length) % libraryTracks.length;
+        const currentTrack = libraryTracks[currentTrackIndex];
+        let playlistIndex = currentPlaylistTracks.findIndex(t => t.filePath === currentTrack?.filePath);
+        let prevPlaylistIndex = (playlistIndex - 1 + currentPlaylistTracks.length) % currentPlaylistTracks.length;
         if (shuffle) {
-            prevIndex = Math.floor(Math.random() * libraryTracks.length);
+            prevPlaylistIndex = Math.floor(Math.random() * currentPlaylistTracks.length);
         }
-        uiLog('INFO', `handlePrev: ${currentTrackIndex} -> ${prevIndex}`);
-        await handlePlayLibraryTrack(prevIndex);
+        const prevTrack = currentPlaylistTracks[prevPlaylistIndex];
+        const prevOriginalIndex = libraryTracks.findIndex(t => t.filePath === prevTrack.filePath);
+        uiLog('INFO', `handlePrev: ${currentTrackIndex} -> ${prevOriginalIndex}`);
+        await handlePlayLibraryTrack(prevOriginalIndex);
     };
 
     // Держим актуальную ссылку, чтобы смонтированный один раз интервал
@@ -512,10 +623,11 @@ function App() {
 
     useEffect(() => {
         loadLibrary();
+        loadPlaylists();
     }, []);
 
     useEffect(() => {
-        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks, shuffle, repeat };
+        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks, shuffle, repeat, currentPlaylistTracks };
     });
 
     useEffect(() => {
@@ -564,15 +676,18 @@ function App() {
                 }
             }
 
-            if (st.autoMix && st.libraryTracks.length > 0) {
+            if (st.autoMix && st.currentPlaylistTracks.length > 0) {
                 const otherSlot = st.activeSlot === 0 ? 1 : 0;
-                let nextIndex = (st.currentTrackIndex + 1) % st.libraryTracks.length;
+                const currentTrack = st.tracks[st.activeSlot];
+                let playlistIndex = st.currentPlaylistTracks.findIndex(t => t.filePath === currentTrack?.filePath);
+                let nextPlaylistIndex = (playlistIndex + 1) % st.currentPlaylistTracks.length;
                 if (st.repeat) {
-                    nextIndex = st.currentTrackIndex;
+                    nextPlaylistIndex = playlistIndex >= 0 ? playlistIndex : 0;
                 } else if (st.shuffle) {
-                    nextIndex = Math.floor(Math.random() * st.libraryTracks.length);
+                    nextPlaylistIndex = Math.floor(Math.random() * st.currentPlaylistTracks.length);
                 }
-                const nextTrack = st.libraryTracks[nextIndex];
+                const nextTrack = st.currentPlaylistTracks[nextPlaylistIndex];
+                const nextOriginalIndex = st.libraryTracks.findIndex(t => t.filePath === nextTrack.filePath);
                 
                 if (updatedPlaying[st.activeSlot] && activeTrack) {
                     const otherTrack = st.tracks[otherSlot];
@@ -583,7 +698,7 @@ function App() {
 
                 if (updatedPlaying[otherSlot] && !st.playing[otherSlot]) {
                     setActiveSlot(otherSlot as 0 | 1);
-                    setCurrentTrackIndex(nextIndex);
+                    setCurrentTrackIndex(nextOriginalIndex);
                 }
             }
         }, 100);
@@ -716,8 +831,11 @@ function App() {
 
                     <nav className="nav-menu">
                         <button 
-                            className={`nav-item ${activeTab === 'library' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('library')}
+                            className={`nav-item ${activeTab === 'library' && selectedPlaylist === null ? 'active' : ''}`}
+                            onClick={() => {
+                                setSelectedPlaylist(null);
+                                setActiveTab('library');
+                            }}
                         >
                             <LibraryIcon />
                             <span>Library</span>
@@ -737,6 +855,62 @@ function App() {
                             <span>Settings</span>
                         </button>
                     </nav>
+
+                    <div className="playlists-sidebar-section">
+                        <div className="playlists-sidebar-header">
+                            <span className="theme-section-title">PLAYLISTS</span>
+                            <button 
+                                className="create-playlist-sidebar-btn" 
+                                onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
+                                title="Create Playlist"
+                            >
+                                <PlusIcon />
+                            </button>
+                        </div>
+                        {isCreatingPlaylist && (
+                            <div className="sidebar-playlist-input-container">
+                                <input
+                                    type="text"
+                                    placeholder="New playlist name..."
+                                    value={newPlaylistName}
+                                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleCreatePlaylistSubmit();
+                                        if (e.key === 'Escape') setIsCreatingPlaylist(false);
+                                    }}
+                                    className="sidebar-playlist-input"
+                                    autoFocus
+                                />
+                                <button className="sidebar-playlist-submit-btn" onClick={handleCreatePlaylistSubmit}>✓</button>
+                            </div>
+                        )}
+                        <div className="sidebar-playlists-list">
+                            {playlists.map((pl) => {
+                                const isActive = selectedPlaylist === pl.name && activeTab === 'library';
+                                return (
+                                    <div key={pl.name} className={`sidebar-playlist-row ${isActive ? 'active' : ''}`}>
+                                        <button 
+                                            className="sidebar-playlist-item-btn"
+                                            onClick={() => {
+                                                setSelectedPlaylist(pl.name);
+                                                setActiveTab('library');
+                                            }}
+                                        >
+                                            <MusicIconSmall />
+                                            <span className="sidebar-playlist-name">{pl.name}</span>
+                                        </button>
+                                        <button 
+                                            className="sidebar-delete-playlist-btn"
+                                            onClick={() => handleDeletePlaylist(pl.name)}
+                                            title="Delete Playlist"
+                                        >
+                                            <TrashIcon />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
                     <div className="theme-selector-section">
                         <span className="theme-section-title">THEME PALETTE</span>
@@ -780,16 +954,16 @@ function App() {
                                     </svg>
                                 </div>
                                 <div className="hero-content">
-                                    <span className="hero-tag">LOCAL PLAYLIST</span>
-                                    <h1 className="hero-title">Home Library</h1>
+                                    <span className="hero-tag">{selectedPlaylist ? 'CUSTOM PLAYLIST' : 'LOCAL PLAYLIST'}</span>
+                                    <h1 className="hero-title">{selectedPlaylist || 'Home Library'}</h1>
                                     <div className="hero-stats">
                                         <span className="hero-author">0xPlayer</span>
                                         <span className="hero-dot">•</span>
-                                        <span>{libraryTracks.length} tracks</span>
+                                        <span>{currentPlaylistTracks.length} tracks</span>
                                         <span className="hero-dot">•</span>
                                         <span>{totalDurationStr}</span>
                                     </div>
-                                    <p className="hero-path">{musicDir}</p>
+                                    <p className="hero-path">{selectedPlaylist ? `Custom Playlist: ${selectedPlaylist}` : musicDir}</p>
                                 </div>
                             </header>
 
@@ -826,6 +1000,7 @@ function App() {
                                                 <th style={{ width: '120px' }}>BPM</th>
                                                 <th style={{ width: '120px' }}>KEY</th>
                                                 <th style={{ width: '100px' }}>DURATION</th>
+                                                <th style={{ width: '80px', textAlign: 'center' }}></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -850,6 +1025,56 @@ function App() {
                                                         <td>{track.bpm.toFixed(1)}</td>
                                                         <td className="glowing-key">{track.keySignature}</td>
                                                         <td>{formatTime(track.durationSec)}</td>
+                                                        <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="action-buttons-group">
+                                                                <button 
+                                                                    className="track-action-btn add-btn"
+                                                                    onClick={() => setActivePlaylistMenuTrack(activePlaylistMenuTrack === track.filePath ? null : track.filePath)}
+                                                                    title="Add to Playlist"
+                                                                >
+                                                                    <PlusIcon />
+                                                                </button>
+                                                                {selectedPlaylist && (
+                                                                    <button 
+                                                                        className="track-action-btn remove-btn"
+                                                                        onClick={() => handleRemoveTrackFromPlaylist(selectedPlaylist, track.filePath)}
+                                                                        title="Remove from Playlist"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                )}
+                                                                {activePlaylistMenuTrack === track.filePath && (
+                                                                    <>
+                                                                        <div className="playlist-dropdown-backdrop" onClick={() => setActivePlaylistMenuTrack(null)} />
+                                                                        <div className="playlist-dropdown-menu">
+                                                                            <span className="dropdown-menu-title">Add to Playlist</span>
+                                                                            {playlists.length === 0 ? (
+                                                                                <span className="dropdown-no-playlists">No playlists created</span>
+                                                                            ) : (
+                                                                                playlists.map((pl) => {
+                                                                                    const alreadyHas = pl.trackPaths?.includes(track.filePath);
+                                                                                    return (
+                                                                                        <button 
+                                                                                            key={pl.name}
+                                                                                            className={`dropdown-menu-item ${alreadyHas ? 'disabled' : ''}`}
+                                                                                            onClick={() => {
+                                                                                                if (!alreadyHas) {
+                                                                                                    handleAddTrackToPlaylist(pl.name, track.filePath);
+                                                                                                }
+                                                                                            }}
+                                                                                            disabled={alreadyHas}
+                                                                                        >
+                                                                                            <span>{pl.name}</span>
+                                                                                            {alreadyHas && <span className="already-has-check">✓</span>}
+                                                                                        </button>
+                                                                                    );
+                                                                                })
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}

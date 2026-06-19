@@ -1,5 +1,19 @@
 export namespace main {
 	
+	export class Playlist {
+	    name: string;
+	    trackPaths: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Playlist(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.trackPaths = source["trackPaths"];
+	    }
+	}
 	export class TrackMetadata {
 	    filePath: string;
 	    durationSec: number;

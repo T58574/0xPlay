@@ -7,10 +7,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
-
 	"github.com/wailsapp/wails/v2/pkg/options"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -269,7 +267,7 @@ func TestAppMocks(t *testing.T) {
 
 func TestLogFromJS(t *testing.T) {
 	// Reset global logger state for tests to capture output
-	appLoggerOnce = sync.Once{}
+	appLoggerOnce = &sync.Once{}
 	appLogger = nil
 	appLogFile = nil
 	appLoggerOn = true

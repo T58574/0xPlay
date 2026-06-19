@@ -1196,3 +1196,262 @@ body {
     font-weight: 600;
     color: #ffffff;
 }
+
+.playlists-sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex: 1;
+    overflow: hidden;
+}
+
+.playlists-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.create-playlist-sidebar-btn {
+    background: transparent;
+    border: none;
+    color: #64748B;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.create-playlist-sidebar-btn:hover {
+    color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-playlist-input-container {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+.sidebar-playlist-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-size: 12px;
+    width: 100%;
+    font-family: inherit;
+}
+
+.sidebar-playlist-submit-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-color);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.sidebar-playlists-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sidebar-playlist-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    padding-right: 8px;
+    transition: background 0.15s ease;
+}
+
+.sidebar-playlist-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-playlist-row.active {
+    background: var(--accent-bg-glow);
+}
+
+.sidebar-playlist-row.active .sidebar-playlist-item-btn {
+    color: var(--accent-color);
+}
+
+.sidebar-playlist-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: color 0.15s ease;
+}
+
+.sidebar-playlist-item-btn:hover {
+    color: #ffffff;
+}
+
+.sidebar-playlist-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-delete-playlist-btn {
+    background: transparent;
+    border: none;
+    color: #64748B;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.sidebar-playlist-row:hover .sidebar-delete-playlist-btn {
+    opacity: 1;
+}
+
+.sidebar-delete-playlist-btn:hover {
+    color: #F43F5E;
+    background: rgba(244, 63, 94, 0.1);
+}
+
+.actions-cell {
+    text-align: center;
+}
+
+.action-buttons-group {
+    position: relative;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.track-action-btn {
+    background: transparent;
+    border: none;
+    color: #64748B;
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.track-row:hover .track-action-btn {
+    opacity: 1;
+}
+
+.track-action-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.track-action-btn.add-btn:hover {
+    color: var(--accent-color);
+}
+
+.track-action-btn.remove-btn:hover {
+    color: #F43F5E;
+}
+
+.playlist-dropdown-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    background: transparent;
+}
+
+.playlist-dropdown-menu {
+    position: absolute;
+    bottom: 120%;
+    right: 0;
+    width: 180px;
+    background: #11101E;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-menu-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #64748B;
+    padding: 8px 12px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    margin-bottom: 4px;
+}
+
+.dropdown-no-playlists {
+    font-size: 11px;
+    color: #64748B;
+    padding: 12px;
+    text-align: center;
+}
+
+.dropdown-menu-item {
+    background: transparent;
+    border: none;
+    color: #E2E8F0;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.dropdown-menu-item:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--accent-color);
+}
+
+.dropdown-menu-item.disabled {
+    color: #64748B;
+    cursor: not-allowed;
+}
+
+.already-has-check {
+    color: var(--accent-color);
+    font-weight: bold;
+}

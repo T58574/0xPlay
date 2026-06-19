@@ -34,11 +34,12 @@ func TestLogger(t *testing.T) {
 	}
 	defer os.RemoveAll(tempHome)
 
-	// Save original HOME and restore later
 	origHome := os.Getenv("HOME")
 	defer os.Setenv("HOME", origHome)
-
 	os.Setenv("HOME", tempHome)
+	origUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", origUserProfile)
+	os.Setenv("USERPROFILE", tempHome)
 
 	// 2. Test InitLogger
 	InitLogger()
@@ -150,6 +151,9 @@ func TestInitLogger_MkdirError(t *testing.T) {
 	origHome := os.Getenv("HOME")
 	defer os.Setenv("HOME", origHome)
 	os.Setenv("HOME", tempHome)
+	origUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", origUserProfile)
+	os.Setenv("USERPROFILE", tempHome)
 
 	// Create a file where the .0xplayer directory should be
 	dir := filepath.Join(tempHome, ".0xplayer")
@@ -191,6 +195,9 @@ func TestInitLogger_OpenFileError(t *testing.T) {
 	origHome := os.Getenv("HOME")
 	defer os.Setenv("HOME", origHome)
 	os.Setenv("HOME", tempHome)
+	origUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", origUserProfile)
+	os.Setenv("USERPROFILE", tempHome)
 
 	dir := filepath.Join(tempHome, ".0xplayer")
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -237,6 +244,9 @@ func TestInitLogger_MultipleCalls(t *testing.T) {
 	origHome := os.Getenv("HOME")
 	defer os.Setenv("HOME", origHome)
 	os.Setenv("HOME", tempHome)
+	origUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", origUserProfile)
+	os.Setenv("USERPROFILE", tempHome)
 
 	InitLogger()
 	firstLogFile := appLogFile
