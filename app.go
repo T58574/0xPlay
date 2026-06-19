@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -146,30 +147,80 @@ func (a *App) GetMusicDir() (string, error) {
 	return dir, nil
 }
 
+type CacheEntry struct {
+	FilePath     string    `json:"filePath"`
+	DurationSec  float64   `json:"durationSec"`
+	BPM          float64   `json:"bpm"`
+	KeySignature string    `json:"keySignature"`
+	Waveform     []float32 `json:"waveform"`
+	Size         int64     `json:"size"`
+	ModTime      int64     `json:"modTime"`
+}
+
 func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 	Log(LogInfo, "library", "ScanMusicDir start")
 	dir, err := a.GetMusicDir()
 	if err != nil {
 		return nil, err
 	}
+	cachePath := filepath.Join(dir, "cache.json")
+	cacheMap := make(map[string]CacheEntry)
+	if cacheBytes, readErr := os.ReadFile(cachePath); readErr == nil {
+		var cachedList []CacheEntry
+		if unmarshalErr := json.Unmarshal(cacheBytes, &cachedList); unmarshalErr == nil {
+			for _, entry := range cachedList {
+				cacheMap[entry.FilePath] = entry
+			}
+			Log(LogInfo, "library", "loaded %d cached entries", len(cacheMap))
+		}
+	}
 	var list []TrackMetadata
-	err = filepathWalk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			Log(LogWarn, "library", "walk error on %s: %v", path, err)
-			return err
+	err = filepathWalk(dir, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			Log(LogWarn, "library", "walk error on %s: %v", path, walkErr)
+			return walkErr
 		}
 		if !info.IsDir() {
 			ext := filepath.Ext(path)
 			if ext == ".mp3" || ext == ".wav" || ext == ".flac" {
-				Log(LogDebug, "library", "analyze %s", path)
-				meta := AnalyzeFile(path)
-				Log(LogInfo, "library", "found %s duration=%.3fs bpm=%.1f key=%s",
-					filepath.Base(path), meta.DurationSec, meta.BPM, meta.KeySignature)
+				var meta TrackMetadata
+				cached, found := cacheMap[path]
+				if found && cached.Size == info.Size() && cached.ModTime == info.ModTime().Unix() {
+					meta = TrackMetadata{
+						FilePath:     cached.FilePath,
+						DurationSec:  cached.DurationSec,
+						BPM:          cached.BPM,
+						KeySignature: cached.KeySignature,
+						Waveform:     cached.Waveform,
+					}
+				} else {
+					meta = AnalyzeFile(path)
+					cacheMap[path] = CacheEntry{
+						FilePath:     meta.FilePath,
+						DurationSec:  meta.DurationSec,
+						BPM:          meta.BPM,
+						KeySignature: meta.KeySignature,
+						Waveform:     meta.Waveform,
+						Size:         info.Size(),
+						ModTime:      info.ModTime().Unix(),
+					}
+				}
 				list = append(list, meta)
 			}
 		}
 		return nil
 	})
+	if err == nil {
+		var activeCacheList []CacheEntry
+		for _, meta := range list {
+			if entry, found := cacheMap[meta.FilePath]; found {
+				activeCacheList = append(activeCacheList, entry)
+			}
+		}
+		if cacheBytes, marshalErr := json.Marshal(activeCacheList); marshalErr == nil {
+			_ = os.WriteFile(cachePath, cacheBytes, 0644)
+		}
+	}
 	Log(LogInfo, "library", "ScanMusicDir done: %d tracks, err=%v", len(list), err)
 	return list, err
 }
@@ -187,4 +238,19 @@ func (a *App) OpenMusicDir() {
 	} else {
 		startCmd("xdg-open", dir)
 	}
+}
+
+func (a *App) LogFromJS(level string, message string) {
+	var logLevel LogLevel
+	switch level {
+	case "DEBUG":
+		logLevel = LogDebug
+	case "WARN":
+		logLevel = LogWarn
+	case "ERROR":
+		logLevel = LogError
+	default:
+		logLevel = LogInfo
+	}
+	Log(logLevel, "ui", "%s", message)
 }

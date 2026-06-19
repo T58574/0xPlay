@@ -561,6 +561,9 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
 int init_audio_engine(int sample_rate, int channels) {
     engine_log_open();
     ENGINE_LOGI("init_audio_engine sample_rate=%d channels=%d", sample_rate, channels);
+    if (g_device_initialized) {
+        cleanup_audio_engine();
+    }
     g_sample_rate = sample_rate;
     g_channels = channels;
 

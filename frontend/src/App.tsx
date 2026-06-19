@@ -15,7 +15,8 @@ import {
     GetMusicDir,
     ScanMusicDir,
     OpenMusicDir,
-    SetCrossfadeDuration
+    SetCrossfadeDuration,
+    LogFromJS
 } from "../wailsjs/go/main/App";
 
 interface TrackInfo {
@@ -183,6 +184,7 @@ function App() {
         const color = level === 'ERROR' ? 'color:#ef4444' : level === 'WARN' ? 'color:#f59e0b' : 'color:#22c55e';
         // eslint-disable-next-line no-console
         console.log(prefix, color, msg);
+        LogFromJS(level, msg).catch(() => {});
     };
 
     // Guard: предотвращает параллельный запуск нескольких переключений трека.
@@ -198,6 +200,7 @@ function App() {
     // создаётся один раз при монтировании и замыкает первую версию handleNext,
     // поэтому без этого ref он видел бы устаревший currentTrackIndex=-1.
     const handleNextRef = useRef<() => void>(() => {});
+    const handleLoadDeckRef = useRef<(slot: number, path: string) => Promise<void>>(async () => {});
 
     const stateRef = useRef({
         tracks: [null, null] as [TrackInfo | null, TrackInfo | null],
@@ -411,6 +414,7 @@ function App() {
     // Держим актуальную ссылку, чтобы смонтированный один раз интервал
     // вызывал свежую версию handleNext (с актуальным currentTrackIndex).
     handleNextRef.current = handleNext;
+    handleLoadDeckRef.current = handleLoadDeck;
 
     const handleVolume = async (slot: number, val: number) => {
         const updated = [...volumes] as [number, number];
@@ -508,11 +512,11 @@ function App() {
                 if (updatedPlaying[st.activeSlot] && activeTrack) {
                     const otherTrack = st.tracks[otherSlot];
                     if (!otherTrack || otherTrack.filePath !== nextTrack.filePath) {
-                        await handleLoadDeck(otherSlot, nextTrack.filePath);
+                        await handleLoadDeckRef.current(otherSlot, nextTrack.filePath);
                     }
                 }
 
-                if (updatedPlaying[otherSlot] && !updatedPlaying[st.activeSlot]) {
+                if (updatedPlaying[otherSlot] && !st.playing[otherSlot]) {
                     setActiveSlot(otherSlot as 0 | 1);
                     setCurrentTrackIndex(nextIndex);
                 }

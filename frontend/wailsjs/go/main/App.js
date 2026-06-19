@@ -18,6 +18,10 @@ export function LoadTrack(arg1, arg2) {
   return window['go']['main']['App']['LoadTrack'](arg1, arg2);
 }
 
+export function LogFromJS(arg1, arg2) {
+  return window['go']['main']['App']['LogFromJS'](arg1, arg2);
+}
+
 export function OpenMusicDir() {
   return window['go']['main']['App']['OpenMusicDir']();
 }

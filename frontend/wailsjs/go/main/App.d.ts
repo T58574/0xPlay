@@ -10,6 +10,8 @@ export function IsPlaying(arg1:number):Promise<boolean>;
 
 export function LoadTrack(arg1:number,arg2:string):Promise<main.TrackMetadata>;
 
+export function LogFromJS(arg1:string,arg2:string):Promise<void>;
+
 export function OpenMusicDir():Promise<void>;
 
 export function Pause(arg1:number):Promise<void>;
