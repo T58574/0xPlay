@@ -10,7 +10,19 @@ import (
 
 func TestLogger(t *testing.T) {
 	// Reset global state for tests to avoid interference from other tests calling InitLogger
-	appLoggerOnce = sync.Once{}
+	// Save global state
+	origOnce := appLoggerOnce
+	origLogger := appLogger
+	origLogFile := appLogFile
+	origLoggerOn := appLoggerOn
+	defer func() {
+		appLoggerOnce = origOnce
+		appLogger = origLogger
+		appLogFile = origLogFile
+		appLoggerOn = origLoggerOn
+	}()
+
+	appLoggerOnce = &sync.Once{}
 	appLogger = nil
 	appLogFile = nil
 	appLoggerOn = true
@@ -78,74 +90,162 @@ func TestLogger(t *testing.T) {
 	}
 }
 
-func resetLoggerForTest() {
-	appLoggerOnce = sync.Once{}
+func TestInitLogger_HomeDirError(t *testing.T) {
+	// Save global state
+	origOnce := appLoggerOnce
+	origLogger := appLogger
+	origLogFile := appLogFile
+	origLoggerOn := appLoggerOn
+	defer func() {
+		appLoggerOnce = origOnce
+		appLogger = origLogger
+		appLogFile = origLogFile
+		appLoggerOn = origLoggerOn
+	}()
+
+	appLoggerOnce = &sync.Once{}
 	appLogger = nil
 	appLogFile = nil
 	appLoggerOn = true
+
+	// Unset HOME to force os.UserHomeDir to fail on linux
+	origHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", origHome)
+	os.Unsetenv("HOME")
+	origUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", origUserProfile)
+	os.Unsetenv("USERPROFILE")
+
+	InitLogger()
+
+	if appLogFile != nil {
+		t.Error("appLogFile should be nil when home dir cannot be determined")
+	}
 }
 
-func TestLogger_InitErrors(t *testing.T) {
-	origHome := os.Getenv("HOME")
-	origProfile := os.Getenv("USERPROFILE")
+func TestInitLogger_MkdirError(t *testing.T) {
+	// Save global state
+	origOnce := appLoggerOnce
+	origLogger := appLogger
+	origLogFile := appLogFile
+	origLoggerOn := appLoggerOn
 	defer func() {
-		os.Setenv("HOME", origHome)
-		if origProfile != "" {
-			os.Setenv("USERPROFILE", origProfile)
-		}
+		appLoggerOnce = origOnce
+		appLogger = origLogger
+		appLogFile = origLogFile
+		appLoggerOn = origLoggerOn
 	}()
 
-	t.Run("HomeDirError", func(t *testing.T) {
-		resetLoggerForTest()
-		os.Unsetenv("HOME")
-		os.Unsetenv("USERPROFILE") // For Windows
-		InitLogger()
-		if appLogFile != nil {
-			t.Error("appLogFile should be nil when HOME and USERPROFILE are unset")
-		}
-	})
+	appLoggerOnce = &sync.Once{}
+	appLogger = nil
+	appLogFile = nil
+	appLoggerOn = true
 
-	t.Run("MkdirError", func(t *testing.T) {
-		resetLoggerForTest()
-		tempHome, err := os.MkdirTemp("", "logger_test_err_*")
-		if err != nil {
-			t.Fatalf("Failed to create temp home: %v", err)
-		}
-		defer os.RemoveAll(tempHome)
-		os.Setenv("HOME", tempHome)
+	tempHome, err := os.MkdirTemp("", "logger_test_home_*")
+	if err != nil {
+		t.Fatalf("Failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tempHome)
 
-		// Create a file where the directory should be
-		fileDir := filepath.Join(tempHome, ".0xplayer")
-		if err := os.WriteFile(fileDir, []byte("file content"), 0644); err != nil {
-			t.Fatalf("Failed to create blocking file: %v", err)
-		}
+	origHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", origHome)
+	os.Setenv("HOME", tempHome)
 
-		InitLogger()
-		if appLogFile != nil {
-			t.Error("appLogFile should be nil when MkdirAll fails")
-		}
-	})
+	// Create a file where the .0xplayer directory should be
+	dir := filepath.Join(tempHome, ".0xplayer")
+	if err := os.WriteFile(dir, []byte("file instead of dir"), 0644); err != nil {
+		t.Fatalf("Failed to create obstructing file: %v", err)
+	}
 
-	t.Run("OpenFileError", func(t *testing.T) {
-		resetLoggerForTest()
-		tempHome, err := os.MkdirTemp("", "logger_test_err_*")
-		if err != nil {
-			t.Fatalf("Failed to create temp home: %v", err)
-		}
-		defer os.RemoveAll(tempHome)
-		os.Setenv("HOME", tempHome)
+	InitLogger()
 
-		logDir := filepath.Join(tempHome, ".0xplayer")
-		logPath := filepath.Join(logDir, "player.log")
+	if appLogFile != nil {
+		t.Error("appLogFile should be nil when MkdirAll fails")
+	}
+}
 
-		// Create a directory where the log file should be
-		if err := os.MkdirAll(logPath, 0755); err != nil {
-			t.Fatalf("Failed to create blocking directory: %v", err)
-		}
+func TestInitLogger_OpenFileError(t *testing.T) {
+	// Save global state
+	origOnce := appLoggerOnce
+	origLogger := appLogger
+	origLogFile := appLogFile
+	origLoggerOn := appLoggerOn
+	defer func() {
+		appLoggerOnce = origOnce
+		appLogger = origLogger
+		appLogFile = origLogFile
+		appLoggerOn = origLoggerOn
+	}()
 
-		InitLogger()
-		if appLogFile != nil {
-			t.Error("appLogFile should be nil when OpenFile fails")
-		}
-	})
+	appLoggerOnce = &sync.Once{}
+	appLogger = nil
+	appLogFile = nil
+	appLoggerOn = true
+
+	tempHome, err := os.MkdirTemp("", "logger_test_home_*")
+	if err != nil {
+		t.Fatalf("Failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tempHome)
+
+	origHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", origHome)
+	os.Setenv("HOME", tempHome)
+
+	dir := filepath.Join(tempHome, ".0xplayer")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("Failed to create dir: %v", err)
+	}
+
+	// Create a directory where the log file should be
+	logFile := filepath.Join(dir, "player.log")
+	if err := os.MkdirAll(logFile, 0755); err != nil {
+		t.Fatalf("Failed to create obstructing directory: %v", err)
+	}
+
+	InitLogger()
+
+	if appLogFile != nil {
+		t.Error("appLogFile should be nil when OpenFile fails")
+	}
+}
+
+func TestInitLogger_MultipleCalls(t *testing.T) {
+	// Save global state
+	origOnce := appLoggerOnce
+	origLogger := appLogger
+	origLogFile := appLogFile
+	origLoggerOn := appLoggerOn
+	defer func() {
+		appLoggerOnce = origOnce
+		appLogger = origLogger
+		appLogFile = origLogFile
+		appLoggerOn = origLoggerOn
+	}()
+
+	appLoggerOnce = &sync.Once{}
+	appLogger = nil
+	appLogFile = nil
+	appLoggerOn = true
+
+	tempHome, err := os.MkdirTemp("", "logger_test_home_*")
+	if err != nil {
+		t.Fatalf("Failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tempHome)
+
+	origHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", origHome)
+	os.Setenv("HOME", tempHome)
+
+	InitLogger()
+	firstLogFile := appLogFile
+
+	InitLogger() // Should be a no-op
+
+	if appLogFile != firstLogFile {
+		t.Error("appLogFile changed after second InitLogger call")
+	}
+
+	CloseLogger()
 }
