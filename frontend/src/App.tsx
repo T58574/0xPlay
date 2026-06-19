@@ -544,7 +544,8 @@ function App() {
 
         const playPct = dur > 0 ? pos / dur : 0;
         const barWidth = w / peaks.length;
-        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#22C55E';
+        const theme = themes[currentTheme as keyof typeof themes] || themes.emerald;
+        const accentColor = theme.accent || '#22C55E';
 
         for (let i = 0; i < peaks.length; i++) {
             const pct = i / peaks.length;
@@ -567,14 +568,14 @@ function App() {
             const t = tracks[0];
             draw(canvasRef0.current, t ? t.waveform : [], positions[0], t ? t.durationSec : 0);
         }
-    }, [tracks[0], positions[0]]);
+    }, [tracks[0], positions[0], currentTheme]);
 
     useEffect(() => {
         if (canvasRef1.current) {
             const t = tracks[1];
             draw(canvasRef1.current, t ? t.waveform : [], positions[1], t ? t.durationSec : 0);
         }
-    }, [tracks[1], positions[1]]);
+    }, [tracks[1], positions[1], currentTheme]);
 
     const formatTime = (sec: number) => {
         const m = Math.floor(sec / 60);
