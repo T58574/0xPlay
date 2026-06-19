@@ -264,3 +264,40 @@ func TestAppMocks(t *testing.T) {
 	}
 	filepathWalk = origWalk
 }
+
+func TestAnalyzeFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	wavPath := filepath.Join(tmpDir, "test_analyze.wav")
+	err := createTestWav(wavPath)
+	if err != nil {
+		t.Fatalf("failed to create test wav: %v", err)
+	}
+
+	ok := InitAudioEngine(44100, 2)
+	if !ok {
+		t.Fatalf("failed to initialize audio engine")
+	}
+	defer CleanupAudioEngine()
+
+	meta := AnalyzeFile(wavPath)
+
+	if meta.FilePath != wavPath {
+		t.Errorf("expected FilePath to be %s, got %s", wavPath, meta.FilePath)
+	}
+
+	if meta.DurationSec <= 0.0 {
+		t.Errorf("expected positive duration, got %f", meta.DurationSec)
+	}
+
+	if meta.BPM <= 0.0 {
+		t.Errorf("expected positive BPM, got %f", meta.BPM)
+	}
+
+	if meta.KeySignature == "" {
+		t.Errorf("expected non-empty key signature")
+	}
+
+	if len(meta.Waveform) == 0 {
+		t.Errorf("expected non-empty waveform")
+	}
+}
