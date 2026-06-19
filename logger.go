@@ -17,7 +17,7 @@ import (
 var (
 	appLogger     *log.Logger
 	appLogFile    *os.File
-	appLoggerOnce sync.Once
+	appLoggerOnce *sync.Once = &sync.Once{}
 	appLoggerMu   sync.Mutex
 	appLoggerOn   = true
 )
