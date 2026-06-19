@@ -793,6 +793,11 @@ body {
     color: #ffffff;
 }
 
+.nav-ctrl-btn.active {
+    color: var(--accent-color, #22C55E);
+    text-shadow: 0 0 8px var(--accent-bg-glow, rgba(34, 197, 94, 0.4));
+}
+
 .global-play-btn {
     background: #ffffff;
     color: #000000;
