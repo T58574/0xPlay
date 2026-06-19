@@ -264,3 +264,17 @@ func TestAppMocks(t *testing.T) {
 	}
 	filepathWalk = origWalk
 }
+
+func TestLogFromJS(t *testing.T) {
+	app := NewApp()
+	ctx := context.Background()
+	app.startup(ctx)
+	defer app.shutdown(ctx)
+
+	// Since LogFromJS just writes to the log, we can at least call it
+	// to ensure it doesn't panic and achieves coverage.
+	app.LogFromJS("DEBUG", "test debug message")
+	app.LogFromJS("WARN", "test warn message")
+	app.LogFromJS("ERROR", "test error message")
+	app.LogFromJS("UNKNOWN", "test default info message")
+}
