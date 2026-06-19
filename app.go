@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var (
@@ -17,9 +17,9 @@ var (
 	startCmd       = func(name string, args ...string) error {
 		return exec.Command(name, args...).Start()
 	}
-	osUserHomeDir  = os.UserHomeDir
-	osMkdirAll     = os.MkdirAll
-	filepathWalk   = filepath.Walk
+	osUserHomeDir = os.UserHomeDir
+	osMkdirAll    = os.MkdirAll
+	filepathWalk  = filepath.Walk
 )
 
 type App struct {
@@ -218,7 +218,7 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 			}
 		}
 		if cacheBytes, marshalErr := json.Marshal(activeCacheList); marshalErr == nil {
-			_ = os.WriteFile(cachePath, cacheBytes, 0644)
+			_ = os.WriteFile(cachePath, cacheBytes, 0600)
 		}
 	}
 	Log(LogInfo, "library", "ScanMusicDir done: %d tracks, err=%v", len(list), err)
