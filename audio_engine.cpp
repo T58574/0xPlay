@@ -277,13 +277,27 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
     double envelope_fs = 200.0;
     int downsample_ratio = (int)(dec.outputSampleRate / envelope_fs);
     if (downsample_ratio < 1) downsample_ratio = 1;
-    std::vector<float> env;
-    for (size_t i = 0; i + downsample_ratio <= mono_buf.size(); i += downsample_ratio) {
+    size_t env_size = mono_buf.size() / downsample_ratio;
+    std::vector<float> env(env_size);
+    const float* src = mono_buf.data();
+    float* dst = env.data();
+    float inv_ratio = 1.0f / downsample_ratio;
+
+    for (size_t i = 0; i < env_size; ++i) {
         float sum = 0.0f;
-        for (int j = 0; j < downsample_ratio; j++) {
-            sum += fabsf(mono_buf[i + j]);
+        int offset = i * downsample_ratio;
+
+        int j = 0;
+        for (; j <= downsample_ratio - 4; j += 4) {
+            sum += fabsf(src[offset + j]) +
+                   fabsf(src[offset + j + 1]) +
+                   fabsf(src[offset + j + 2]) +
+                   fabsf(src[offset + j + 3]);
         }
-        env.push_back(sum / downsample_ratio);
+        for (; j < downsample_ratio; ++j) {
+            sum += fabsf(src[offset + j]);
+        }
+        dst[i] = sum * inv_ratio;
     }
     
     std::vector<float> onset(env.size(), 0.0f);
