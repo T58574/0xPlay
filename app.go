@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var (
@@ -17,9 +17,9 @@ var (
 	startCmd       = func(name string, args ...string) error {
 		return exec.Command(name, args...).Start()
 	}
-	osUserHomeDir  = os.UserHomeDir
-	osMkdirAll     = os.MkdirAll
-	filepathWalk   = filepath.Walk
+	osUserHomeDir = os.UserHomeDir
+	osMkdirAll    = os.MkdirAll
+	filepathWalk  = filepath.Walk
 )
 
 type App struct {
@@ -175,6 +175,7 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 		}
 	}
 	var list []TrackMetadata
+	var activeCacheList []CacheEntry
 	err = filepathWalk(dir, func(path string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
 			Log(LogWarn, "library", "walk error on %s: %v", path, walkErr)
@@ -193,9 +194,10 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 						KeySignature: cached.KeySignature,
 						Waveform:     cached.Waveform,
 					}
+					activeCacheList = append(activeCacheList, cached)
 				} else {
 					meta = AnalyzeFile(path)
-					cacheMap[path] = CacheEntry{
+					newCacheEntry := CacheEntry{
 						FilePath:     meta.FilePath,
 						DurationSec:  meta.DurationSec,
 						BPM:          meta.BPM,
@@ -204,6 +206,8 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 						Size:         info.Size(),
 						ModTime:      info.ModTime().Unix(),
 					}
+					cacheMap[path] = newCacheEntry
+					activeCacheList = append(activeCacheList, newCacheEntry)
 				}
 				list = append(list, meta)
 			}
@@ -211,12 +215,6 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 		return nil
 	})
 	if err == nil {
-		var activeCacheList []CacheEntry
-		for _, meta := range list {
-			if entry, found := cacheMap[meta.FilePath]; found {
-				activeCacheList = append(activeCacheList, entry)
-			}
-		}
 		if cacheBytes, marshalErr := json.Marshal(activeCacheList); marshalErr == nil {
 			_ = os.WriteFile(cachePath, cacheBytes, 0644)
 		}

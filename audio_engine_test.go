@@ -277,4 +277,75 @@ func TestLogFromJS(t *testing.T) {
 	app.LogFromJS("WARN", "test warn message")
 	app.LogFromJS("ERROR", "test error message")
 	app.LogFromJS("UNKNOWN", "test default info message")
+func TestMalformedCache(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	origHomeDir := osUserHomeDir
+	osUserHomeDir = func() (string, error) {
+		return tmpDir, nil
+	}
+	defer func() { osUserHomeDir = origHomeDir }()
+
+	app := NewApp()
+	app.startup(nil)
+	defer app.shutdown(nil)
+
+	dir, err := app.GetMusicDir()
+	if err != nil {
+		t.Fatalf("failed to get music dir: %v", err)
+	}
+
+	cachePath := filepath.Join(dir, "cache.json")
+	err = os.WriteFile(cachePath, []byte("{malformed: json}"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write malformed cache.json: %v", err)
+	}
+
+	testWavInDir := filepath.Join(dir, "test.wav")
+	err = createTestWav(testWavInDir)
+	if err != nil {
+		t.Fatalf("failed to create wav in dir: %v", err)
+	}
+
+	list, err := app.ScanMusicDir()
+	if err != nil {
+		t.Errorf("expected no error when scan falls back, got: %v", err)
+	}
+	if len(list) != 1 {
+		t.Errorf("expected 1 track scanned, got %d", len(list))
+func TestAnalyzeFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	wavPath := filepath.Join(tmpDir, "test_analyze.wav")
+	err := createTestWav(wavPath)
+	if err != nil {
+		t.Fatalf("failed to create test wav: %v", err)
+	}
+
+	ok := InitAudioEngine(44100, 2)
+	if !ok {
+		t.Fatalf("failed to initialize audio engine")
+	}
+	defer CleanupAudioEngine()
+
+	meta := AnalyzeFile(wavPath)
+
+	if meta.FilePath != wavPath {
+		t.Errorf("expected FilePath to be %s, got %s", wavPath, meta.FilePath)
+	}
+
+	if meta.DurationSec <= 0.0 {
+		t.Errorf("expected positive duration, got %f", meta.DurationSec)
+	}
+
+	if meta.BPM <= 0.0 {
+		t.Errorf("expected positive BPM, got %f", meta.BPM)
+	}
+
+	if meta.KeySignature == "" {
+		t.Errorf("expected non-empty key signature")
+	}
+
+	if len(meta.Waveform) == 0 {
+		t.Errorf("expected non-empty waveform")
+	}
 }
