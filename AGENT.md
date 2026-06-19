@@ -49,12 +49,11 @@ When "Auto-Mix" is enabled and Track A (slot 0) transitions to Track B (slot 1):
 1.  **Beat-Aligned Start**: The transition is triggered exactly on a musical bar boundary close to the end of Track A. The actual crossfade duration is calculated dynamically to span an integer number of bars (e.g. 16 beats / 4 bars) based on Track A's BPM:
     $$T_{\text{fade}} = \text{round}\left(\frac{C \cdot \text{BPM}_A}{240.0}\right) \cdot \frac{240.0}{\text{BPM}_A}$$
     where $C$ is the target crossfade duration (default 8s).
-2.  **Dynamic BPM Sync**: Rather than a static rate shift, the tempos of both tracks are continuously and smoothly ramped to match each other throughout the transition, from $\text{BPM}_A$ to $\text{BPM}_B$:
-    $$\text{BPM}(t) = \text{BPM}_A \cdot (1 - t) + \text{BPM}_B \cdot t$$
-    where $t = \frac{\text{elapsed}}{T_{\text{fade}}} \in [0, 1]$.
-    The tempo ratio of Track A (outgoing) and Track B (incoming) is adjusted dynamically at each callback:
-    $$\text{tempo\_ratio}_A(t) = \frac{\text{BPM}(t)}{\text{BPM}_A}, \quad \text{tempo\_ratio}_B(t) = \frac{\text{BPM}(t)}{\text{BPM}_B}$$
-3.  **Harmonic Key Match**: Track B is pitch-shifted to the closest compatible Camelot Wheel key relative to the *current playing key* of Track A (which accounts for Track A's own pitch shifts), using a minimal pitch shift within $\pm 2$ semitones.
+2.  **Dynamic BPM Sync**: Rather than a static rate shift, the tempo of the outgoing Track A is continuously and smoothly ramped to meet the native tempo of the incoming Track B over the transition:
+    $$\text{tempo\_ratio}_A(t) = 1.0 \cdot (1 - t) + \frac{\text{BPM}_B}{\text{BPM}_A} \cdot t$$
+    where $t = \frac{\text{elapsed}}{T_{\text{fade}}} \in [0, 1]$. The incoming Track B starts playing immediately at its native tempo:
+    $$\text{tempo\_ratio}_B(t) = 1.0$$
+3.  **Pitch Invariance**: The pitch/key signature of both tracks is kept strictly invariant ($\text{pitch\_semi} = 0.0$ at all times) to preserve their original musical keys.
 4.  **Equal-Power Crossfade**: An equal-power crossfade is performed to prevent dips in volume in the middle of the transition:
     $$\text{vol}_A(t) = \cos\left(t \cdot \frac{\pi}{2}\right), \quad \text{vol}_B(t) = \sin\left(t \cdot \frac{\pi}{2}\right)$$
 

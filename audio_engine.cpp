@@ -511,12 +511,6 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
 
 static double g_actual_crossfade_duration = 8.0;
 
-static std::string get_playing_key(int slot) {
-    if (slot < 0 || slot > 1) return "8A";
-    int shift = (int)std::round(g_tracks[slot].pitch_semi);
-    return get_shifted_key(g_tracks[slot].key.c_str(), shift);
-}
-
 static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     float* out = (float*)pOutput;
     int channels = pDevice->playback.channels;
@@ -534,13 +528,11 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
         if (bpm1 < 30.0 || bpm1 > 300.0) bpm1 = 120.0;
 
         if (g_mixer_state == 1) {
-            double current_bpm = bpm0 * (1.0 - t) + bpm1 * t;
-            g_tracks[0].tempo_ratio = current_bpm / bpm0;
-            g_tracks[1].tempo_ratio = current_bpm / bpm1;
+            g_tracks[0].tempo_ratio = 1.0 * (1.0 - t) + (bpm1 / bpm0) * t;
+            g_tracks[1].tempo_ratio = 1.0;
         } else {
-            double current_bpm = bpm1 * (1.0 - t) + bpm0 * t;
-            g_tracks[1].tempo_ratio = current_bpm / bpm1;
-            g_tracks[0].tempo_ratio = current_bpm / bpm0;
+            g_tracks[1].tempo_ratio = 1.0 * (1.0 - t) + (bpm0 / bpm1) * t;
+            g_tracks[0].tempo_ratio = 1.0;
         }
     }
 
@@ -567,6 +559,7 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
             g_tracks[0].tempo_ratio = 1.0;
             g_tracks[0].pitch_semi = 0.0;
             g_tracks[1].tempo_ratio = 1.0;
+            g_tracks[1].pitch_semi = 0.0;
             g_mixer_state = 2;
         }
     } else if (g_mixer_state == 3) {
@@ -586,6 +579,7 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
             g_tracks[1].tempo_ratio = 1.0;
             g_tracks[1].pitch_semi = 0.0;
             g_tracks[0].tempo_ratio = 1.0;
+            g_tracks[0].pitch_semi = 0.0;
             g_mixer_state = 0;
         }
     } else if (g_mixer_state == 0) {
@@ -610,21 +604,7 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
                 g_crossfade_elapsed = 0.0;
                 g_actual_crossfade_duration = actual_crossfade_dur;
                 g_tracks[1].is_playing = true;
-                g_tracks[1].seek_position = 0.0;
-
-                std::string playing_key_0 = get_playing_key(0);
-                int best_shift = 0;
-                double min_shift_abs = 999.0;
-                for (int shift = -2; shift <= 2; shift++) {
-                    const char* new_key = get_shifted_key(g_tracks[1].key.c_str(), shift);
-                    if (keys_compatible(playing_key_0.c_str(), new_key)) {
-                        if (std::abs(shift) < min_shift_abs) {
-                            min_shift_abs = std::abs(shift);
-                            best_shift = shift;
-                        }
-                    }
-                }
-                g_tracks[1].pitch_semi = best_shift;
+                g_tracks[1].pitch_semi = 0.0;
             }
         }
     } else if (g_mixer_state == 2) {
@@ -649,21 +629,7 @@ static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput
                 g_crossfade_elapsed = 0.0;
                 g_actual_crossfade_duration = actual_crossfade_dur;
                 g_tracks[0].is_playing = true;
-                g_tracks[0].seek_position = 0.0;
-
-                std::string playing_key_1 = get_playing_key(1);
-                int best_shift = 0;
-                double min_shift_abs = 999.0;
-                for (int shift = -2; shift <= 2; shift++) {
-                    const char* new_key = get_shifted_key(g_tracks[0].key.c_str(), shift);
-                    if (keys_compatible(playing_key_1.c_str(), new_key)) {
-                        if (std::abs(shift) < min_shift_abs) {
-                            min_shift_abs = std::abs(shift);
-                            best_shift = shift;
-                        }
-                    }
-                }
-                g_tracks[0].pitch_semi = best_shift;
+                g_tracks[0].pitch_semi = 0.0;
             }
         }
     }
@@ -726,7 +692,8 @@ int load_track(int slot, const char* file_path) {
         ts.has_decoder = false;
     }
 
-    ts.stretch_initialized = false;
+    ts.stretch.presetDefault(g_channels, g_sample_rate);
+    ts.stretch_initialized = true;
     ts.is_playing = false;
     ts.seek_position = -1.0;
     ts.tempo_ratio = 1.0;
