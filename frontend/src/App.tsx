@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import {
     LoadTrack,
@@ -16,7 +16,8 @@ import {
     ScanMusicDir,
     OpenMusicDir,
     SetCrossfadeDuration,
-    LogFromJS
+    LogFromJS,
+    GetSpectrum
 } from "../wailsjs/go/main/App";
 
 interface TrackInfo {
@@ -134,6 +135,25 @@ const SettingsIcon = () => (
     </svg>
 );
 
+const ShuffleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <polyline points="16 3 21 3 21 8"></polyline>
+        <line x1="4" y1="20" x2="21" y2="3"></line>
+        <polyline points="21 16 21 21 16 21"></polyline>
+        <line x1="15" y1="15" x2="21" y2="21"></line>
+        <line x1="4" y1="4" x2="9" y2="9"></line>
+    </svg>
+);
+
+const RepeatIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <polyline points="17 1 21 5 17 9"></polyline>
+        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+        <polyline points="7 23 3 19 7 15"></polyline>
+        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+    </svg>
+);
+
 function App() {
     const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings'>('library');
     const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(8.0);
@@ -172,9 +192,22 @@ function App() {
     const [tempos, setTempos] = useState<[number, number]>([1.0, 1.0]);
     const [pitches, setPitches] = useState<[number, number]>([0.0, 0.0]);
     const [autoMix, setAutoMix] = useState<boolean>(false);
+    const [shuffle, setShuffle] = useState<boolean>(false);
+    const [repeat, setRepeat] = useState<boolean>(false);
 
     const canvasRef0 = useRef<HTMLCanvasElement | null>(null);
     const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
+
+    // Добавляем рефы для спектрограмм
+    const spectrumRef0 = useRef<HTMLCanvasElement | null>(null);
+    const spectrumRef1 = useRef<HTMLCanvasElement | null>(null);
+    const reqAnimFrameId = useRef<number | null>(null);
+    const isFetchingSpectrum = useRef<[boolean, boolean]>([false, false]);
+    const currentThemeRef = useRef<string>(currentTheme);
+
+    useEffect(() => {
+        currentThemeRef.current = currentTheme;
+    }, [currentTheme]);
 
     // Фронтенд-логгер. Пишет в консоль devtools с префиксом [ui] и временной
     // меткой, чтобы было проще сопоставлять с backend-логами (~/.0xplayer/).
@@ -201,6 +234,7 @@ function App() {
     // поэтому без этого ref он видел бы устаревший currentTrackIndex=-1.
     const handleNextRef = useRef<() => void>(() => {});
     const handleLoadDeckRef = useRef<(slot: number, path: string) => Promise<void>>(async () => {});
+    const handleSeekRef = useRef<(slot: number, pct: number) => Promise<void>>(async () => {});
 
     const stateRef = useRef({
         tracks: [null, null] as [TrackInfo | null, TrackInfo | null],
@@ -209,7 +243,9 @@ function App() {
         activeSlot: 0 as 0 | 1,
         currentTrackIndex: -1,
         autoMix: false,
-        libraryTracks: [] as TrackInfo[]
+        libraryTracks: [] as TrackInfo[],
+        shuffle: false,
+        repeat: false
     });
 
     const getFilename = (path: string) => {
@@ -395,7 +431,10 @@ function App() {
             uiLog('WARN', 'handleNext: уже идёт переключение — пропуск');
             return;
         }
-        const nextIndex = (currentTrackIndex + 1) % libraryTracks.length;
+        let nextIndex = (currentTrackIndex + 1) % libraryTracks.length;
+        if (shuffle) {
+            nextIndex = Math.floor(Math.random() * libraryTracks.length);
+        }
         uiLog('INFO', `handleNext: ${currentTrackIndex} -> ${nextIndex}`);
         await handlePlayLibraryTrack(nextIndex);
     };
@@ -406,7 +445,10 @@ function App() {
             uiLog('WARN', 'handlePrev: уже идёт переключение — пропуск');
             return;
         }
-        const prevIndex = (currentTrackIndex - 1 + libraryTracks.length) % libraryTracks.length;
+        let prevIndex = (currentTrackIndex - 1 + libraryTracks.length) % libraryTracks.length;
+        if (shuffle) {
+            prevIndex = Math.floor(Math.random() * libraryTracks.length);
+        }
         uiLog('INFO', `handlePrev: ${currentTrackIndex} -> ${prevIndex}`);
         await handlePlayLibraryTrack(prevIndex);
     };
@@ -451,6 +493,8 @@ function App() {
         setPositions(updated);
     };
 
+    handleSeekRef.current = handleSeek;
+
     const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>, slot: number) => {
         const canvas = e.currentTarget;
         const rect = canvas.getBoundingClientRect();
@@ -471,7 +515,7 @@ function App() {
     }, []);
 
     useEffect(() => {
-        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks };
+        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks, shuffle, repeat };
     });
 
     useEffect(() => {
@@ -480,16 +524,28 @@ function App() {
             const updatedPlaying = [...st.playing] as [boolean, boolean];
             const updatedPos = [...st.positions] as [number, number];
             
-            await Promise.all([0, 1].map(async (slot) => {
-                if (st.tracks[slot]) {
-                    const isPlay = await IsPlaying(slot);
-                    updatedPlaying[slot] = isPlay;
-                    if (isPlay) {
-                        const pos = await GetPosition(slot);
-                        updatedPos[slot] = pos;
+            await Promise.all([
+                (async () => {
+                    if (st.tracks[0]) {
+                        const isPlay = await IsPlaying(0);
+                        updatedPlaying[0] = isPlay;
+                        if (isPlay) {
+                            const pos = await GetPosition(0);
+                            updatedPos[0] = pos;
+                        }
                     }
-                }
-            }));
+                })(),
+                (async () => {
+                    if (st.tracks[1]) {
+                        const isPlay = await IsPlaying(1);
+                        updatedPlaying[1] = isPlay;
+                        if (isPlay) {
+                            const pos = await GetPosition(1);
+                            updatedPos[1] = pos;
+                        }
+                    }
+                })()
+            ]);
             
             setPlaying(updatedPlaying);
             setPositions(updatedPos);
@@ -500,13 +556,22 @@ function App() {
             if (activeTrack && activeIsPlaying && activeTrack.durationSec > 0 && activePos >= activeTrack.durationSec - 0.5) {
                 if (!st.autoMix) {
                     uiLog('INFO', `interval: трек закончен pos=${activePos.toFixed(2)} dur=${activeTrack.durationSec.toFixed(2)} -> next`);
-                    handleNextRef.current();
+                    if (st.repeat) {
+                        handleSeekRef.current(st.activeSlot, 0);
+                    } else {
+                        handleNextRef.current();
+                    }
                 }
             }
 
             if (st.autoMix && st.libraryTracks.length > 0) {
                 const otherSlot = st.activeSlot === 0 ? 1 : 0;
-                const nextIndex = (st.currentTrackIndex + 1) % st.libraryTracks.length;
+                let nextIndex = (st.currentTrackIndex + 1) % st.libraryTracks.length;
+                if (st.repeat) {
+                    nextIndex = st.currentTrackIndex;
+                } else if (st.shuffle) {
+                    nextIndex = Math.floor(Math.random() * st.libraryTracks.length);
+                }
                 const nextTrack = st.libraryTracks[nextIndex];
                 
                 if (updatedPlaying[st.activeSlot] && activeTrack) {
@@ -524,6 +589,63 @@ function App() {
         }, 100);
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        const fetchSpectrum = async (slot: 0 | 1, canvas: HTMLCanvasElement | null) => {
+            if (!canvas || !stateRef.current.playing[slot] || isFetchingSpectrum.current[slot]) return;
+
+            isFetchingSpectrum.current[slot] = true;
+            try {
+                const spectrum = await GetSpectrum(slot);
+                if (spectrum && spectrum.length > 0) {
+                    drawSpectrum(canvas, spectrum);
+                }
+            } catch (err) {
+                // Ignore err
+            } finally {
+                isFetchingSpectrum.current[slot] = false;
+            }
+        };
+
+        const renderLoop = () => {
+            fetchSpectrum(0, spectrumRef0.current);
+            fetchSpectrum(1, spectrumRef1.current);
+            reqAnimFrameId.current = requestAnimationFrame(renderLoop);
+        };
+
+        reqAnimFrameId.current = requestAnimationFrame(renderLoop);
+        return () => {
+            if (reqAnimFrameId.current !== null) {
+                cancelAnimationFrame(reqAnimFrameId.current);
+            }
+        };
+    }, []);
+
+    const drawSpectrum = (canvas: HTMLCanvasElement, spectrum: number[]) => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const theme = themes[currentThemeRef.current as keyof typeof themes] || themes.emerald;
+        const gradient = ctx.createLinearGradient(0, h, 0, 0);
+        gradient.addColorStop(0, theme.accent + '20');
+        gradient.addColorStop(0.5, theme.accent + '80');
+        gradient.addColorStop(1, theme.accent);
+
+        ctx.fillStyle = gradient;
+
+        const barWidth = Math.max(1, (w / spectrum.length) - 1);
+        for (let i = 0; i < spectrum.length; i++) {
+            // Ограничиваем высоту столбцов (магнитуда может быть разной, используем эмпирический множитель)
+            const magnitude = Math.min(1.0, spectrum[i] * 0.5);
+            const barHeight = magnitude * h;
+            const x = i * (w / spectrum.length);
+            const y = h - barHeight;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+    };
 
     const draw = (canvas: HTMLCanvasElement, peaks: number[], pos: number, dur: number) => {
         const ctx = canvas.getContext('2d');
@@ -791,13 +913,21 @@ function App() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="visualizer-container">
+                                                    <div className="visualizer-container" style={{ position: 'relative' }}>
+                                                        <canvas
+                                                            ref={slot === 0 ? spectrumRef0 : spectrumRef1}
+                                                            width={600}
+                                                            height={120}
+                                                            className="spectrum-canvas"
+                                                            style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', opacity: 0.8 }}
+                                                        />
                                                         <canvas
                                                             ref={canvasRef}
                                                             width={600}
                                                             height={120}
                                                             className="waveform-canvas"
                                                             onClick={(e) => handleCanvasClick(e, slot)}
+                                                            style={{ position: 'relative', zIndex: 10, mixBlendMode: 'screen' }}
                                                         />
                                                     </div>
 
@@ -1004,6 +1134,9 @@ function App() {
 
                 <div className="playback-middle">
                     <div className="playback-bar-controls">
+                        <button className={`nav-ctrl-btn ${shuffle ? 'active' : ''}`} onClick={() => setShuffle(!shuffle)}>
+                            <ShuffleIcon />
+                        </button>
                         <button className="nav-ctrl-btn" onClick={handlePrev}>
                             <PrevIcon />
                         </button>
@@ -1012,6 +1145,9 @@ function App() {
                         </button>
                         <button className="nav-ctrl-btn" onClick={handleNext}>
                             <NextIcon />
+                        </button>
+                        <button className={`nav-ctrl-btn ${repeat ? 'active' : ''}`} onClick={() => setRepeat(!repeat)}>
+                            <RepeatIcon />
                         </button>
                     </div>
 

@@ -82,6 +82,8 @@ struct TrackState {
     double bpm = 120.0;
     std::string key = "8A";
     std::vector<float> waveform;
+    std::vector<float> recent_samples;
+    int recent_ptr = 0;
     std::mutex mtx;
 };
 
@@ -306,8 +308,9 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
         onset[i] = diff > 0.0f ? diff : 0.0f;
     }
     
-    int min_lag = (int)(envelope_fs * 60.0 / 180.0);
+    int min_lag = (int)(envelope_fs * 60.0 / 300.0);
     int max_lag = (int)(envelope_fs * 60.0 / 60.0);
+    std::vector<double> corrs(max_lag + 2, 0.0);
     double max_corr = -1.0;
     int best_lag = min_lag;
     for (int lag = min_lag; lag <= max_lag; lag++) {
@@ -319,15 +322,31 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
         }
         if (count > 0) {
             corr /= count;
-            double weight = 1.0 - 0.2 * abs(lag - (int)(envelope_fs * 60.0 / 120.0)) / (envelope_fs * 60.0 / 60.0);
-            corr *= weight;
+            corrs[lag] = corr;
             if (corr > max_corr) {
                 max_corr = corr;
                 best_lag = lag;
             }
         }
     }
-    *out_bpm = 60.0 * envelope_fs / best_lag;
+
+    int half_lag = best_lag / 2;
+    if (half_lag >= min_lag && corrs[half_lag] > max_corr * 0.5) {
+        best_lag = half_lag;
+    }
+
+    double fractional_lag = (double)best_lag;
+    if (best_lag > min_lag && best_lag < max_lag) {
+        double alpha = corrs[best_lag - 1];
+        double beta  = corrs[best_lag];
+        double gamma = corrs[best_lag + 1];
+        double denom = alpha - 2.0 * beta + gamma;
+        if (denom != 0.0) {
+            double p = 0.5 * (alpha - gamma) / denom;
+            fractional_lag = best_lag + p;
+        }
+    }
+    *out_bpm = 60.0 * envelope_fs / fractional_lag;
     
     int fft_size = 4096;
     std::vector<std::complex<double>> fft_in(fft_size);
@@ -343,9 +362,14 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
             double freq = k * (double)dec.outputSampleRate / fft_size;
             if (freq >= 50.0 && freq <= 2000.0) {
                 double pitch = 12.0 * log2(freq / 440.0) + 69.0;
-                int semitone = (int)round(pitch) % 12;
-                if (semitone < 0) semitone += 12;
-                chroma[semitone] += abs(fft_in[k]);
+                double bin_frac = pitch - floor(pitch);
+                int bin_low = (int)floor(pitch) % 12;
+                int bin_high = (bin_low + 1) % 12;
+                if (bin_low < 0) bin_low += 12;
+                if (bin_high < 0) bin_high += 12;
+                double mag = abs(fft_in[k]);
+                chroma[bin_low] += mag * (1.0 - bin_frac);
+                chroma[bin_high] += mag * bin_frac;
             }
         }
     }
@@ -397,6 +421,8 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
     
     if (ts.seek_position >= 0.0) {
         ma_uint64 target_frame = (ma_uint64)(ts.seek_position * ts.decoder.outputSampleRate);
+        ts.recent_samples.assign(1024, 0.0f);
+        ts.recent_ptr = 0;
         ma_uint64 total_frames = 0;
         if (ma_decoder_get_length_in_pcm_frames(&ts.decoder, &total_frames) == MA_SUCCESS) {
             if (target_frame >= total_frames) {
@@ -421,6 +447,18 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
             memset(out_buffer + read_frames * channels, 0, (frame_count - read_frames) * channels * sizeof(float));
             ts.is_playing = false;
             ENGINE_LOGI("get_audio_frames: трек дошёл до конца (EOF) duration=%.3fs", ts.duration);
+        }
+
+        if (ts.recent_samples.empty()) {
+            ts.recent_samples.assign(1024, 0.0f);
+        }
+        for (int i = 0; i < frame_count; i++) {
+            float mono = out_buffer[i * channels];
+            if (channels > 1) {
+                mono = (mono + out_buffer[i * channels + 1]) * 0.5f;
+            }
+            ts.recent_samples[ts.recent_ptr] = mono;
+            ts.recent_ptr = (ts.recent_ptr + 1) % 1024;
         }
         return;
     }
@@ -466,6 +504,18 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
     for (int i = 0; i < frame_count; i++) {
         out_buffer[i * channels] = chan_out[0][i] * ts.volume;
         out_buffer[i * channels + 1] = chan_out[1][i] * ts.volume;
+    }
+
+    if (ts.recent_samples.empty()) {
+        ts.recent_samples.assign(1024, 0.0f);
+    }
+    for (int i = 0; i < frame_count; i++) {
+        float mono = out_buffer[i * channels];
+        if (channels > 1) {
+            mono = (mono + out_buffer[i * channels + 1]) * 0.5f;
+        }
+        ts.recent_samples[ts.recent_ptr] = mono;
+        ts.recent_ptr = (ts.recent_ptr + 1) % 1024;
     }
 }
 
@@ -634,6 +684,8 @@ int load_track(int slot, const char* file_path) {
     ts.seek_position = -1.0;
     ts.tempo_ratio = 1.0;
     ts.pitch_semi = 0.0;
+    ts.recent_samples.assign(1024, 0.0f);
+    ts.recent_ptr = 0;
 
     // Фиксированный формат вывода — см. init_decoder_fixed.
     if (init_decoder_fixed(file_path, &ts.decoder) != MA_SUCCESS) {
@@ -675,6 +727,47 @@ TrackMetadataC get_track_metadata(int slot) {
         memcpy(meta.waveformData, ts.waveform.data(), ts.waveform.size() * sizeof(float));
     }
     return meta;
+}
+
+int get_track_spectrum(int slot, float* out_buffer, int max_size) {
+    if (slot < 0 || slot > 1 || max_size <= 0) return 0;
+    TrackState& ts = g_tracks[slot];
+    std::vector<float> samples(1024, 0.0f);
+    {
+        std::lock_guard<std::mutex> lock(ts.mtx);
+        if (!ts.has_decoder || !ts.is_playing || ts.recent_samples.size() != 1024) {
+            memset(out_buffer, 0, max_size * sizeof(float));
+            return 0;
+        }
+        int ptr = ts.recent_ptr;
+        for (int i = 0; i < 1024; i++) {
+            samples[i] = ts.recent_samples[(ptr + i) % 1024];
+        }
+    }
+
+    std::vector<std::complex<double>> fft_in(1024);
+    for (int i = 0; i < 1024; i++) {
+        double w = 0.5 * (1.0 - cos(2.0 * M_PI * i / 1023.0));
+        fft_in[i] = std::complex<double>(samples[i] * w, 0.0);
+    }
+
+    fft(fft_in);
+
+    int num_bins = 512;
+    int bin_step = num_bins / max_size;
+    if (bin_step < 1) bin_step = 1;
+
+    for (int i = 0; i < max_size; i++) {
+        double max_mag = 0.0;
+        for (int j = 0; j < bin_step; j++) {
+            int idx = i * bin_step + j;
+            if (idx >= num_bins) break;
+            double mag = std::abs(fft_in[idx]);
+            if (mag > max_mag) max_mag = mag;
+        }
+        out_buffer[i] = (float)max_mag;
+    }
+    return max_size;
 }
 
 void play_track(int slot) {
