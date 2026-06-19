@@ -216,7 +216,7 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 	})
 	if err == nil {
 		if cacheBytes, marshalErr := json.Marshal(activeCacheList); marshalErr == nil {
-			_ = os.WriteFile(cachePath, cacheBytes, 0644)
+			_ = os.WriteFile(cachePath, cacheBytes, 0600)
 		}
 	}
 	Log(LogInfo, "library", "ScanMusicDir done: %d tracks, err=%v", len(list), err)
