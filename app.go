@@ -110,6 +110,10 @@ func (a *App) SetCrossfadeDuration(durationSec float64) {
 	SetCrossfadeDuration(durationSec)
 }
 
+func (a *App) GetSpectrum(slot int) []float32 {
+	return GetTrackSpectrum(slot, 64)
+}
+
 func (a *App) SelectAudioFile() (string, error) {
 	Log(LogInfo, "app", "SelectAudioFile dialog open")
 	path, err := openFileDialog(a.ctx, wailsRuntime.OpenDialogOptions{

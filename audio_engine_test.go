@@ -306,6 +306,7 @@ func TestLogFromJS(t *testing.T) {
 	app.LogFromJS("ERROR", "test error message")
 	app.LogFromJS("UNKNOWN", "test default info message")
 }
+
 func TestMalformedCache(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -344,6 +345,7 @@ func TestMalformedCache(t *testing.T) {
 		t.Errorf("expected 1 track scanned, got %d", len(list))
 	}
 }
+
 func TestAnalyzeFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	wavPath := filepath.Join(tmpDir, "test_analyze.wav")

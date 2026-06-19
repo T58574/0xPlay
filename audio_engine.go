@@ -164,3 +164,12 @@ func AnalyzeFile(filePath string) TrackMetadata {
 		filePath, result.DurationSec, result.BPM, result.KeySignature)
 	return result
 }
+
+func GetTrackSpectrum(slot int, maxSize int) []float32 {
+	out := make([]float32, maxSize)
+	count := int(C.get_track_spectrum(C.int(slot), (*C.float)(unsafe.Pointer(&out[0])), C.int(maxSize)))
+	if count == 0 {
+		return out
+	}
+	return out
+}

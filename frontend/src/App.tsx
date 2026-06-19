@@ -16,7 +16,8 @@ import {
     ScanMusicDir,
     OpenMusicDir,
     SetCrossfadeDuration,
-    LogFromJS
+    LogFromJS,
+    GetSpectrum
 } from "../wailsjs/go/main/App";
 
 interface TrackInfo {
@@ -196,6 +197,17 @@ function App() {
 
     const canvasRef0 = useRef<HTMLCanvasElement | null>(null);
     const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
+
+    // Добавляем рефы для спектрограмм
+    const spectrumRef0 = useRef<HTMLCanvasElement | null>(null);
+    const spectrumRef1 = useRef<HTMLCanvasElement | null>(null);
+    const reqAnimFrameId = useRef<number | null>(null);
+    const isFetchingSpectrum = useRef<[boolean, boolean]>([false, false]);
+    const currentThemeRef = useRef<string>(currentTheme);
+
+    useEffect(() => {
+        currentThemeRef.current = currentTheme;
+    }, [currentTheme]);
 
     // Фронтенд-логгер. Пишет в консоль devtools с префиксом [ui] и временной
     // меткой, чтобы было проще сопоставлять с backend-логами (~/.0xplayer/).
@@ -578,6 +590,63 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        const fetchSpectrum = async (slot: 0 | 1, canvas: HTMLCanvasElement | null) => {
+            if (!canvas || !stateRef.current.playing[slot] || isFetchingSpectrum.current[slot]) return;
+
+            isFetchingSpectrum.current[slot] = true;
+            try {
+                const spectrum = await GetSpectrum(slot);
+                if (spectrum && spectrum.length > 0) {
+                    drawSpectrum(canvas, spectrum);
+                }
+            } catch (err) {
+                // Ignore err
+            } finally {
+                isFetchingSpectrum.current[slot] = false;
+            }
+        };
+
+        const renderLoop = () => {
+            fetchSpectrum(0, spectrumRef0.current);
+            fetchSpectrum(1, spectrumRef1.current);
+            reqAnimFrameId.current = requestAnimationFrame(renderLoop);
+        };
+
+        reqAnimFrameId.current = requestAnimationFrame(renderLoop);
+        return () => {
+            if (reqAnimFrameId.current !== null) {
+                cancelAnimationFrame(reqAnimFrameId.current);
+            }
+        };
+    }, []);
+
+    const drawSpectrum = (canvas: HTMLCanvasElement, spectrum: number[]) => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const theme = themes[currentThemeRef.current as keyof typeof themes] || themes.emerald;
+        const gradient = ctx.createLinearGradient(0, h, 0, 0);
+        gradient.addColorStop(0, theme.accent + '20');
+        gradient.addColorStop(0.5, theme.accent + '80');
+        gradient.addColorStop(1, theme.accent);
+
+        ctx.fillStyle = gradient;
+
+        const barWidth = Math.max(1, (w / spectrum.length) - 1);
+        for (let i = 0; i < spectrum.length; i++) {
+            // Ограничиваем высоту столбцов (магнитуда может быть разной, используем эмпирический множитель)
+            const magnitude = Math.min(1.0, spectrum[i] * 0.5);
+            const barHeight = magnitude * h;
+            const x = i * (w / spectrum.length);
+            const y = h - barHeight;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+    };
+
     const draw = (canvas: HTMLCanvasElement, peaks: number[], pos: number, dur: number) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
@@ -844,13 +913,21 @@ function App() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="visualizer-container">
+                                                    <div className="visualizer-container" style={{ position: 'relative' }}>
+                                                        <canvas
+                                                            ref={slot === 0 ? spectrumRef0 : spectrumRef1}
+                                                            width={600}
+                                                            height={120}
+                                                            className="spectrum-canvas"
+                                                            style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', opacity: 0.8 }}
+                                                        />
                                                         <canvas
                                                             ref={canvasRef}
                                                             width={600}
                                                             height={120}
                                                             className="waveform-canvas"
                                                             onClick={(e) => handleCanvasClick(e, slot)}
+                                                            style={{ position: 'relative', zIndex: 10, mixBlendMode: 'screen' }}
                                                         />
                                                     </div>
 
