@@ -33,3 +33,4 @@ export function SetTempo(arg1:number,arg2:number):Promise<void>;
 export function SetVolume(arg1:number,arg2:number):Promise<void>;
 
 export function ToggleAutoMix(arg1:boolean):Promise<void>;
+export function GetSpectrum(arg1:number):Promise<Array<number>>;

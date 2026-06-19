@@ -65,3 +65,6 @@ export function SetVolume(arg1, arg2) {
 export function ToggleAutoMix(arg1) {
   return window['go']['main']['App']['ToggleAutoMix'](arg1);
 }
+export function GetSpectrum(arg1) {
+  return window['go']['main']['App']['GetSpectrum'](arg1);
+}

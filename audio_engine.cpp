@@ -82,6 +82,8 @@ struct TrackState {
     double bpm = 120.0;
     std::string key = "8A";
     std::vector<float> waveform;
+    std::vector<float> recent_samples;
+    int recent_ptr = 0;
     std::mutex mtx;
 };
 
@@ -397,6 +399,8 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
     
     if (ts.seek_position >= 0.0) {
         ma_uint64 target_frame = (ma_uint64)(ts.seek_position * ts.decoder.outputSampleRate);
+        ts.recent_samples.assign(1024, 0.0f);
+        ts.recent_ptr = 0;
         ma_uint64 total_frames = 0;
         if (ma_decoder_get_length_in_pcm_frames(&ts.decoder, &total_frames) == MA_SUCCESS) {
             if (target_frame >= total_frames) {
@@ -421,6 +425,18 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
             memset(out_buffer + read_frames * channels, 0, (frame_count - read_frames) * channels * sizeof(float));
             ts.is_playing = false;
             ENGINE_LOGI("get_audio_frames: трек дошёл до конца (EOF) duration=%.3fs", ts.duration);
+        }
+
+        if (ts.recent_samples.empty()) {
+            ts.recent_samples.assign(1024, 0.0f);
+        }
+        for (int i = 0; i < frame_count; i++) {
+            float mono = out_buffer[i * channels];
+            if (channels > 1) {
+                mono = (mono + out_buffer[i * channels + 1]) * 0.5f;
+            }
+            ts.recent_samples[ts.recent_ptr] = mono;
+            ts.recent_ptr = (ts.recent_ptr + 1) % 1024;
         }
         return;
     }
@@ -466,6 +482,18 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
     for (int i = 0; i < frame_count; i++) {
         out_buffer[i * channels] = chan_out[0][i] * ts.volume;
         out_buffer[i * channels + 1] = chan_out[1][i] * ts.volume;
+    }
+
+    if (ts.recent_samples.empty()) {
+        ts.recent_samples.assign(1024, 0.0f);
+    }
+    for (int i = 0; i < frame_count; i++) {
+        float mono = out_buffer[i * channels];
+        if (channels > 1) {
+            mono = (mono + out_buffer[i * channels + 1]) * 0.5f;
+        }
+        ts.recent_samples[ts.recent_ptr] = mono;
+        ts.recent_ptr = (ts.recent_ptr + 1) % 1024;
     }
 }
 
@@ -634,6 +662,8 @@ int load_track(int slot, const char* file_path) {
     ts.seek_position = -1.0;
     ts.tempo_ratio = 1.0;
     ts.pitch_semi = 0.0;
+    ts.recent_samples.assign(1024, 0.0f);
+    ts.recent_ptr = 0;
 
     // Фиксированный формат вывода — см. init_decoder_fixed.
     if (init_decoder_fixed(file_path, &ts.decoder) != MA_SUCCESS) {
@@ -675,6 +705,47 @@ TrackMetadataC get_track_metadata(int slot) {
         memcpy(meta.waveformData, ts.waveform.data(), ts.waveform.size() * sizeof(float));
     }
     return meta;
+}
+
+int get_track_spectrum(int slot, float* out_buffer, int max_size) {
+    if (slot < 0 || slot > 1 || max_size <= 0) return 0;
+    TrackState& ts = g_tracks[slot];
+    std::vector<float> samples(1024, 0.0f);
+    {
+        std::lock_guard<std::mutex> lock(ts.mtx);
+        if (!ts.has_decoder || !ts.is_playing || ts.recent_samples.size() != 1024) {
+            memset(out_buffer, 0, max_size * sizeof(float));
+            return 0;
+        }
+        int ptr = ts.recent_ptr;
+        for (int i = 0; i < 1024; i++) {
+            samples[i] = ts.recent_samples[(ptr + i) % 1024];
+        }
+    }
+
+    std::vector<std::complex<double>> fft_in(1024);
+    for (int i = 0; i < 1024; i++) {
+        double w = 0.5 * (1.0 - cos(2.0 * M_PI * i / 1023.0));
+        fft_in[i] = std::complex<double>(samples[i] * w, 0.0);
+    }
+
+    fft(fft_in);
+
+    int num_bins = 512;
+    int bin_step = num_bins / max_size;
+    if (bin_step < 1) bin_step = 1;
+
+    for (int i = 0; i < max_size; i++) {
+        double max_mag = 0.0;
+        for (int j = 0; j < bin_step; j++) {
+            int idx = i * bin_step + j;
+            if (idx >= num_bins) break;
+            double mag = std::abs(fft_in[idx]);
+            if (mag > max_mag) max_mag = mag;
+        }
+        out_buffer[i] = (float)max_mag;
+    }
+    return max_size;
 }
 
 void play_track(int slot) {

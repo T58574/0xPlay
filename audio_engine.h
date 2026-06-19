@@ -29,6 +29,7 @@ void set_automix_enabled(int enabled);
 void set_crossfade_duration(double duration_sec);
 void free_track_metadata(TrackMetadataC metadata);
 TrackMetadataC analyze_file(const char* file_path);
+int get_track_spectrum(int slot, float* out_buffer, int max_size);
 
 #ifdef __cplusplus
 }
