@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Install Wails CLI
+        shell: powershell
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build Production Release
+        shell: powershell
+        env:
+          CGO_ENABLED: 1
+        run: wails build -platform windows/amd64
+
+      - name: Archive Binary
+        shell: powershell
+        run: 7z a soundplayer-windows-amd64.zip .\build\bin\soundplayer.exe
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: soundplayer-windows-amd64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

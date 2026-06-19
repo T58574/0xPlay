@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import {
     LoadTrack,
     Play,
@@ -261,12 +262,13 @@ function App() {
 
     const canvasRef0 = useRef<HTMLCanvasElement | null>(null);
     const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
-
-    // Добавляем рефы для спектрограмм
     const spectrumRef0 = useRef<HTMLCanvasElement | null>(null);
     const spectrumRef1 = useRef<HTMLCanvasElement | null>(null);
-    const reqAnimFrameId = useRef<number | null>(null);
-    const isFetchingSpectrum = useRef<[boolean, boolean]>([false, false]);
+
+    const smoothedSpectrum0 = useRef<number[]>(new Array(64).fill(0));
+    const smoothedSpectrum1 = useRef<number[]>(new Array(64).fill(0));
+    const peakSpectrum0 = useRef<number[]>(new Array(64).fill(0));
+    const peakSpectrum1 = useRef<number[]>(new Array(64).fill(0));
     const currentThemeRef = useRef<string>(currentTheme);
 
     useEffect(() => {
@@ -773,59 +775,73 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const fetchSpectrum = async (slot: 0 | 1, canvas: HTMLCanvasElement | null) => {
-            if (!canvas || !stateRef.current.playing[slot] || isFetchingSpectrum.current[slot]) return;
-
-            isFetchingSpectrum.current[slot] = true;
-            try {
-                const spectrum = await GetSpectrum(slot);
-                if (spectrum && spectrum.length > 0) {
-                    drawSpectrum(canvas, spectrum);
-                }
-            } catch (err) {
-                // Ignore err
-            } finally {
-                isFetchingSpectrum.current[slot] = false;
+        const unsubscribe = EventsOn("spectrum", (data: { deck0: number[], deck1: number[] }) => {
+            if (spectrumRef0.current && data.deck0) {
+                drawSpectrum(spectrumRef0.current, data.deck0, 0);
             }
-        };
-
-        const renderLoop = () => {
-            fetchSpectrum(0, spectrumRef0.current);
-            fetchSpectrum(1, spectrumRef1.current);
-            reqAnimFrameId.current = requestAnimationFrame(renderLoop);
-        };
-
-        reqAnimFrameId.current = requestAnimationFrame(renderLoop);
+            if (spectrumRef1.current && data.deck1) {
+                drawSpectrum(spectrumRef1.current, data.deck1, 1);
+            }
+        });
         return () => {
-            if (reqAnimFrameId.current !== null) {
-                cancelAnimationFrame(reqAnimFrameId.current);
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
             }
         };
-    }, []);
+    }, [currentTheme]);
 
-    const drawSpectrum = (canvas: HTMLCanvasElement, spectrum: number[]) => {
+    const drawSpectrum = (canvas: HTMLCanvasElement, spectrum: number[], slot: number) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         const w = canvas.width;
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        const theme = themes[currentThemeRef.current as keyof typeof themes] || themes.emerald;
-        const gradient = ctx.createLinearGradient(0, h, 0, 0);
-        gradient.addColorStop(0, theme.accent + '20');
-        gradient.addColorStop(0.5, theme.accent + '80');
-        gradient.addColorStop(1, theme.accent);
+        const theme = themes[currentTheme as keyof typeof themes] || themes.emerald;
+        const barGradient = ctx.createLinearGradient(0, h, 0, 0);
+        barGradient.addColorStop(0, theme.accent + '15');
+        barGradient.addColorStop(0.4, theme.accent + 'b3');
+        barGradient.addColorStop(1, theme.accent);
 
-        ctx.fillStyle = gradient;
+        const smoothed = slot === 0 ? smoothedSpectrum0.current : smoothedSpectrum1.current;
+        const peaks = slot === 0 ? peakSpectrum0.current : peakSpectrum1.current;
 
-        const barWidth = Math.max(1, (w / spectrum.length) - 1);
         for (let i = 0; i < spectrum.length; i++) {
-            // Ограничиваем высоту столбцов (магнитуда может быть разной, используем эмпирический множитель)
-            const magnitude = Math.min(1.0, spectrum[i] * 0.5);
-            const barHeight = magnitude * h;
+            const rawVal = spectrum[i] || 0;
+            const normalized = Math.min(1.0, rawVal / 128.0);
+            const target = Math.pow(normalized, 0.75);
+
+            if (target > smoothed[i]) {
+                smoothed[i] = target;
+            } else {
+                smoothed[i] = smoothed[i] * 0.82 + target * 0.18;
+            }
+
+            if (smoothed[i] > peaks[i]) {
+                peaks[i] = smoothed[i];
+            } else {
+                peaks[i] = Math.max(0, peaks[i] * 0.97 - 0.003);
+            }
+        }
+
+        const barWidth = Math.max(1, (w / spectrum.length) - 1.5);
+        for (let i = 0; i < spectrum.length; i++) {
+            const val = smoothed[i];
+            const peakVal = peaks[i];
             const x = i * (w / spectrum.length);
-            const y = h - barHeight;
-            ctx.fillRect(x, y, barWidth, barHeight);
+
+            if (val > 0.01) {
+                const barHeight = val * h * 0.9;
+                const y = h - barHeight;
+                ctx.fillStyle = barGradient;
+                ctx.fillRect(x, y, barWidth, barHeight);
+            }
+
+            if (peakVal > 0.01) {
+                const peakY = h - peakVal * h * 0.9;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x, peakY, barWidth, 1.5);
+            }
         }
     };
 

@@ -1,6 +1,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 #include "signalsmith-stretch.h"
+#include "signalsmith-linear/fft.h"
 #include "audio_engine.h"
 #include <vector>
 #include <string>
@@ -155,26 +156,15 @@ static bool keys_compatible(const char* k1, const char* k2) {
 
 static void fft(std::vector<std::complex<double>>& a) {
     int n = a.size();
-    for (int i = 1, j = 0; i < n; i++) {
-        int bit = n >> 1;
-        for (; j & bit; bit >>= 1) j ^= bit;
-        j ^= bit;
-        if (i < j) std::swap(a[i], a[j]);
+    static thread_local signalsmith::linear::SimpleFFT<double> fft_helper(0);
+    static thread_local size_t current_size = 0;
+    if (current_size != n) {
+        fft_helper.resize(n);
+        current_size = n;
     }
-    for (int len = 2; len <= n; len <<= 1) {
-        double ang = 2 * M_PI / len;
-        std::complex<double> wlen(cos(ang), -sin(ang));
-        for (int i = 0; i < n; i += len) {
-            std::complex<double> w(1);
-            for (int j = 0; j < len / 2; j++) {
-                std::complex<double> u = a[i + j];
-                std::complex<double> v = a[i + j + len / 2] * w;
-                a[i + j] = u + v;
-                a[i + j + len / 2] = u - v;
-                w *= wlen;
-            }
-        }
-    }
+    std::vector<std::complex<double>> out(n);
+    fft_helper.fft(a.data(), out.data());
+    a = std::move(out);
 }
 
 // Создаёт декодер с фиксированным выходным форматом: f32, 2 канала, 44100 Гц.

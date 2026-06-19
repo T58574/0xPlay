@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 	"github.com/dhowden/tag"
 )
 
@@ -39,6 +40,43 @@ func (a *App) startup(ctx context.Context) {
 	Log(LogInfo, "app", "init audio engine: sampleRate=44100 channels=2")
 	InitAudioEngine(44100, 2)
 	a.GetMusicDir()
+	if ctx != nil {
+		go a.broadcastSpectrum()
+	}
+}
+
+func (a *App) broadcastSpectrum() {
+	ticker := time.NewTicker(16 * time.Millisecond)
+	defer ticker.Stop()
+
+	wasPlaying := false
+	for {
+		select {
+		case <-a.ctx.Done():
+			return
+		case <-ticker.C:
+			p0 := IsTrackPlaying(0)
+			p1 := IsTrackPlaying(1)
+
+			if p0 || p1 {
+				wasPlaying = true
+				spec0 := GetTrackSpectrum(0, 64)
+				spec1 := GetTrackSpectrum(1, 64)
+
+				wailsRuntime.EventsEmit(a.ctx, "spectrum", map[string][]float32{
+					"deck0": spec0,
+					"deck1": spec1,
+				})
+			} else if wasPlaying {
+				zeroSpec := make([]float32, 64)
+				wailsRuntime.EventsEmit(a.ctx, "spectrum", map[string][]float32{
+					"deck0": zeroSpec,
+					"deck1": zeroSpec,
+				})
+				wasPlaying = false
+			}
+		}
+	}
 }
 
 func (a *App) shutdown(ctx context.Context) {

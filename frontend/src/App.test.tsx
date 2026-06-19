@@ -2,6 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 
+vi.mock('../wailsjs/runtime/runtime', () => ({
+    EventsOn: vi.fn().mockReturnValue(() => {}),
+    EventsOff: vi.fn(),
+    EventsEmit: vi.fn(),
+}));
+
 vi.mock('../wailsjs/go/main/App', () => ({
     LoadTrack: vi.fn(),
     Play: vi.fn(),

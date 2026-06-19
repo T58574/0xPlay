@@ -118,6 +118,33 @@ func (a *App) SearchSoundCloud(query string) ([]SoundCloudResult, error)
 func (a *App) DownloadFromSoundCloud(trackURL string) error
 ```
 
+### 5.2 Real-Time IPC Events (Broadcasting)
+
+The Go backend broadcasts real-time DSP event packets to the React frontend at ~60 FPS when tracks are active.
+
+#### `spectrum`
+*   **Payload Type**: `map[string][]float32` (JSON: `{"deck0": [...], "deck1": [...]}`)
+*   **Description**: Concurrently calculated FFT spectrum bins (64 bins per deck, frequency range 0 - 22,050Hz).
+*   **Go Broadcast Routine**:
+    ```go
+    wailsRuntime.EventsEmit(a.ctx, "spectrum", map[string][]float32{
+        "deck0": spec0,
+        "deck1": spec1,
+    })
+    ```
+*   **React Frontend Subscription**:
+    ```javascript
+    import { EventsOn } from "../wailsjs/runtime/runtime";
+
+    useEffect(() => {
+        const unsubscribe = EventsOn("spectrum", (data) => {
+            drawSpectrum(canvas0, data.deck0, 0);
+            drawSpectrum(canvas1, data.deck1, 1);
+        });
+        return () => unsubscribe();
+    }, []);
+    ```
+
 #### Examples of API Usage:
 ```javascript
 // Load and scan user music directory
