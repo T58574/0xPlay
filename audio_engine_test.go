@@ -7,6 +7,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -266,17 +268,63 @@ func TestAppMocks(t *testing.T) {
 }
 
 func TestLogFromJS(t *testing.T) {
+	// Reset global logger state for tests to capture output
+	appLoggerOnce = sync.Once{}
+	appLogger = nil
+	appLogFile = nil
+	appLoggerOn = true
+
+	tempHome, err := os.MkdirTemp("", "logfromjs_test_home_*")
+	if err != nil {
+		t.Fatalf("Failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tempHome)
+
+	origHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", origHome)
+
+	os.Setenv("HOME", tempHome)
+
+	InitLogger()
+
+	logDir := filepath.Join(tempHome, ".0xplayer")
+	logFile := filepath.Join(logDir, "player.log")
+
 	app := NewApp()
 	ctx := context.Background()
+
+	// We call startup but wait, startup also calls InitLogger and Log.
+	// We already called InitLogger, which is safe.
 	app.startup(ctx)
 	defer app.shutdown(ctx)
 
-	// Since LogFromJS just writes to the log, we can at least call it
-	// to ensure it doesn't panic and achieves coverage.
+	// Clear the log file so we only see our LogFromJS calls
+	os.WriteFile(logFile, []byte(""), 0600)
+
 	app.LogFromJS("DEBUG", "test debug message")
 	app.LogFromJS("WARN", "test warn message")
 	app.LogFromJS("ERROR", "test error message")
 	app.LogFromJS("UNKNOWN", "test default info message")
+
+	content, err := os.ReadFile(logFile)
+	if err != nil {
+		t.Fatalf("Failed to read log file: %v", err)
+	}
+	contentStr := string(content)
+
+	if !strings.Contains(contentStr, "[DEBUG] [ui] test debug message") {
+		t.Errorf("Expected DEBUG message, got: %s", contentStr)
+	}
+	if !strings.Contains(contentStr, "[WARN ] [ui] test warn message") {
+		t.Errorf("Expected WARN message, got: %s", contentStr)
+	}
+	if !strings.Contains(contentStr, "[ERROR] [ui] test error message") {
+		t.Errorf("Expected ERROR message, got: %s", contentStr)
+	}
+	if !strings.Contains(contentStr, "[INFO ] [ui] test default info message") {
+		t.Errorf("Expected INFO message for unknown level, got: %s", contentStr)
+	}
+}
 func TestMalformedCache(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -313,6 +361,8 @@ func TestMalformedCache(t *testing.T) {
 	}
 	if len(list) != 1 {
 		t.Errorf("expected 1 track scanned, got %d", len(list))
+	}
+}
 func TestAnalyzeFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	wavPath := filepath.Join(tmpDir, "test_analyze.wav")
