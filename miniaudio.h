@@ -33866,6 +33866,176 @@ static ma_result ma_get_channel_map_from_AudioChannelLayout(AudioChannelLayout* 
                 pChannelMap[0] = MA_CHANNEL_LEFT;
             } break;
 
+            case kAudioChannelLayoutTag_AudioUnit_4:
+            {
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_5:
+            {
+                pChannelMap[4] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_6:
+            {
+                pChannelMap[5] = MA_CHANNEL_BACK_CENTER;
+                pChannelMap[4] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_8:
+            {
+                pChannelMap[7] = MA_CHANNEL_SIDE_RIGHT;
+                pChannelMap[6] = MA_CHANNEL_SIDE_LEFT;
+                pChannelMap[5] = MA_CHANNEL_BACK_CENTER;
+                pChannelMap[4] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_5_0:
+            case kAudioChannelLayoutTag_WAVE_5_0_A:
+            case kAudioChannelLayoutTag_MPEG_5_0_A:
+            {
+                pChannelMap[4] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_0_B:
+            {
+                pChannelMap[4] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_0_C:
+            {
+                pChannelMap[4] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_0_D:
+            {
+                pChannelMap[4] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_LEFT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_CENTER;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_5_1:
+            case kAudioChannelLayoutTag_WAVE_5_1_A:
+            case kAudioChannelLayoutTag_MPEG_5_1_A:
+            {
+                pChannelMap[5] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[4] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[3] = MA_CHANNEL_LFE;
+                pChannelMap[2] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_1_B:
+            {
+                pChannelMap[5] = MA_CHANNEL_LFE;
+                pChannelMap[4] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[3] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[2] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_1_C:
+            {
+                pChannelMap[5] = MA_CHANNEL_LFE;
+                pChannelMap[4] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_5_1_D:
+            {
+                pChannelMap[5] = MA_CHANNEL_LFE;
+                pChannelMap[4] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[1] = MA_CHANNEL_FRONT_LEFT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_CENTER;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_6_1:
+            case kAudioChannelLayoutTag_WAVE_6_1:
+            case kAudioChannelLayoutTag_MPEG_6_1_A:
+            {
+                pChannelMap[6] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[5] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[4] = MA_CHANNEL_BACK_CENTER;
+                pChannelMap[3] = MA_CHANNEL_LFE;
+                pChannelMap[2] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_AudioUnit_7_1:
+            case kAudioChannelLayoutTag_WAVE_7_1:
+            case kAudioChannelLayoutTag_MPEG_7_1_C:
+            {
+                pChannelMap[7] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[6] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[5] = MA_CHANNEL_SIDE_RIGHT;
+                pChannelMap[4] = MA_CHANNEL_SIDE_LEFT;
+                pChannelMap[3] = MA_CHANNEL_LFE;
+                pChannelMap[2] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_7_1_A:
+            {
+                pChannelMap[7] = MA_CHANNEL_FRONT_RIGHT_CENTER;
+                pChannelMap[6] = MA_CHANNEL_FRONT_LEFT_CENTER;
+                pChannelMap[5] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[4] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[3] = MA_CHANNEL_LFE;
+                pChannelMap[2] = MA_CHANNEL_FRONT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[0] = MA_CHANNEL_FRONT_LEFT;
+            } break;
+
+            case kAudioChannelLayoutTag_MPEG_7_1_B:
+            {
+                pChannelMap[7] = MA_CHANNEL_LFE;
+                pChannelMap[6] = MA_CHANNEL_BACK_RIGHT;
+                pChannelMap[5] = MA_CHANNEL_BACK_LEFT;
+                pChannelMap[4] = MA_CHANNEL_FRONT_RIGHT;
+                pChannelMap[3] = MA_CHANNEL_FRONT_LEFT;
+                pChannelMap[2] = MA_CHANNEL_FRONT_RIGHT_CENTER;
+                pChannelMap[1] = MA_CHANNEL_FRONT_LEFT_CENTER;
+                pChannelMap[0] = MA_CHANNEL_FRONT_CENTER;
+            } break;
+
             /* TODO: Add support for more tags here. */
 
             default:
