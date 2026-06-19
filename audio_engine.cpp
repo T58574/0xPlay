@@ -306,8 +306,9 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
         onset[i] = diff > 0.0f ? diff : 0.0f;
     }
     
-    int min_lag = (int)(envelope_fs * 60.0 / 180.0);
+    int min_lag = (int)(envelope_fs * 60.0 / 300.0);
     int max_lag = (int)(envelope_fs * 60.0 / 60.0);
+    std::vector<double> corrs(max_lag + 2, 0.0);
     double max_corr = -1.0;
     int best_lag = min_lag;
     for (int lag = min_lag; lag <= max_lag; lag++) {
@@ -319,15 +320,31 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
         }
         if (count > 0) {
             corr /= count;
-            double weight = 1.0 - 0.2 * abs(lag - (int)(envelope_fs * 60.0 / 120.0)) / (envelope_fs * 60.0 / 60.0);
-            corr *= weight;
+            corrs[lag] = corr;
             if (corr > max_corr) {
                 max_corr = corr;
                 best_lag = lag;
             }
         }
     }
-    *out_bpm = 60.0 * envelope_fs / best_lag;
+
+    int half_lag = best_lag / 2;
+    if (half_lag >= min_lag && corrs[half_lag] > max_corr * 0.5) {
+        best_lag = half_lag;
+    }
+
+    double fractional_lag = (double)best_lag;
+    if (best_lag > min_lag && best_lag < max_lag) {
+        double alpha = corrs[best_lag - 1];
+        double beta  = corrs[best_lag];
+        double gamma = corrs[best_lag + 1];
+        double denom = alpha - 2.0 * beta + gamma;
+        if (denom != 0.0) {
+            double p = 0.5 * (alpha - gamma) / denom;
+            fractional_lag = best_lag + p;
+        }
+    }
+    *out_bpm = 60.0 * envelope_fs / fractional_lag;
     
     int fft_size = 4096;
     std::vector<std::complex<double>> fft_in(fft_size);
@@ -343,9 +360,14 @@ static void analyze_audio(const char* file_path, double* out_duration, double* o
             double freq = k * (double)dec.outputSampleRate / fft_size;
             if (freq >= 50.0 && freq <= 2000.0) {
                 double pitch = 12.0 * log2(freq / 440.0) + 69.0;
-                int semitone = (int)round(pitch) % 12;
-                if (semitone < 0) semitone += 12;
-                chroma[semitone] += abs(fft_in[k]);
+                double bin_frac = pitch - floor(pitch);
+                int bin_low = (int)floor(pitch) % 12;
+                int bin_high = (bin_low + 1) % 12;
+                if (bin_low < 0) bin_low += 12;
+                if (bin_high < 0) bin_high += 12;
+                double mag = abs(fft_in[k]);
+                chroma[bin_low] += mag * (1.0 - bin_frac);
+                chroma[bin_high] += mag * bin_frac;
             }
         }
     }
