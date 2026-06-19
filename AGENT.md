@@ -228,5 +228,5 @@ wails build
 
 | # | Severity | File | Issue | Fix |
 |---|----------|------|-------|-----|
-| 1 | FEATURE | `app.go:390-475`, `App.tsx:20-1200` | SoundCloud search, download, and cataloging features with automatic metadata extraction. | Implement `SearchSoundCloud` and `DownloadFromSoundCloud` backend methods utilizing `yt-dlp`. Parse ID3 tags via `github.com/dhowden/tag` or parse track name if missing. Render search input and results table with importing action on frontend, and add sidebar filter selectors for Artist and Genre with cascading pre-filtering. |
+| 1 | FEATURE | `app.go:390-475`, `App.tsx:20-1400` | SoundCloud search, download, and cataloging features with automatic metadata extraction. | Implement `SearchSoundCloud` and `DownloadFromSoundCloud` backend methods utilizing `yt-dlp`. Parse ID3 tags via `github.com/dhowden/tag` or parse track name if missing. Render dedicated SoundCloud Search view tab on the frontend with search inputs and a results table including importing actions. Add sidebar filter selectors for Artist and Genre with cascading pre-filtering. |
 

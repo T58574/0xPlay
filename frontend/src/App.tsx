@@ -199,8 +199,15 @@ const MusicIconSmall = () => (
     </svg>
 );
 
+const SearchIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+);
+
 function App() {
-    const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings'>('library');
+    const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings' | 'search'>('library');
     const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(8.0);
     const [musicDir, setMusicDir] = useState<string>('');
     const [libraryTracks, setLibraryTracks] = useState<TrackInfo[]>([]);
@@ -908,6 +915,16 @@ function App() {
                             <span>DJ Decks</span>
                         </button>
                         <button 
+                            className={`nav-item ${activeTab === 'search' ? 'active' : ''}`}
+                            onClick={() => {
+                                setSelectedPlaylist(null);
+                                setActiveTab('search');
+                            }}
+                        >
+                            <SearchIcon />
+                            <span>Search SoundCloud</span>
+                        </button>
+                        <button 
                             className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
                             onClick={() => setActiveTab('settings')}
                         >
@@ -1096,69 +1113,7 @@ function App() {
                                         <button className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
                                     )}
                                 </div>
-
-                                <div className="soundcloud-search-container">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search SoundCloud..." 
-                                        value={soundcloudQuery}
-                                        onChange={(e) => setSoundcloudQuery(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleSoundCloudSearch();
-                                        }}
-                                        className="soundcloud-input"
-                                    />
-                                    <button 
-                                        className="soundcloud-search-btn" 
-                                        onClick={handleSoundCloudSearch}
-                                        disabled={searchLoading}
-                                    >
-                                        {searchLoading ? 'Searching...' : 'Search SC'}
-                                    </button>
-                                </div>
                             </div>
-
-                            {soundcloudResults.length > 0 && (
-                                <div className="soundcloud-results-panel">
-                                    <div className="soundcloud-results-header">
-                                        <h3>SoundCloud Results</h3>
-                                        <button className="clear-sc-results-btn" onClick={() => setSoundcloudResults([])}>Clear Results</button>
-                                    </div>
-                                    <div className="soundcloud-results-table-container">
-                                        <table className="soundcloud-results-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>TITLE</th>
-                                                    <th>ARTIST</th>
-                                                    <th>DURATION</th>
-                                                    <th style={{ width: '120px', textAlign: 'center' }}>ACTION</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {soundcloudResults.map((res) => {
-                                                    const isTrackDownloading = downloadingUrl === res.url;
-                                                    return (
-                                                        <tr key={res.url}>
-                                                            <td>{res.title}</td>
-                                                            <td>{res.uploader}</td>
-                                                            <td>{formatTime(res.duration)}</td>
-                                                            <td style={{ textAlign: 'center' }}>
-                                                                <button
-                                                                    className="sc-import-btn"
-                                                                    onClick={() => handleSoundCloudDownload(res.url)}
-                                                                    disabled={isTrackDownloading || isDownloading}
-                                                                >
-                                                                    {isTrackDownloading ? 'Importing...' : 'Import'}
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
 
                             {filteredTracks.length > 0 ? (
                                 <div className="tracks-list-container">
@@ -1424,6 +1379,90 @@ function App() {
                                     );
                                 })}
                             </div>
+                        </div>
+                    )}
+                    {activeTab === 'search' && (
+                        <div className="search-view">
+                            <header className="search-header">
+                                <h1>SoundCloud Search</h1>
+                                <p>Search and import tracks directly into your music library</p>
+                            </header>
+
+                            <div className="soundcloud-search-bar-row">
+                                <div className="soundcloud-search-container-large">
+                                    <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                    </svg>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search SoundCloud tracks..." 
+                                        value={soundcloudQuery}
+                                        onChange={(e) => setSoundcloudQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSoundCloudSearch();
+                                        }}
+                                        className="soundcloud-input-large"
+                                    />
+                                    {soundcloudQuery && (
+                                        <button className="clear-search-btn" onClick={() => setSoundcloudQuery('')}>✕</button>
+                                    )}
+                                </div>
+                                <button 
+                                    className="soundcloud-search-btn-large" 
+                                    onClick={handleSoundCloudSearch}
+                                    disabled={searchLoading}
+                                >
+                                    {searchLoading ? 'Searching...' : 'Search'}
+                                </button>
+                            </div>
+
+                            {soundcloudResults.length > 0 ? (
+                                <div className="soundcloud-results-table-container-large">
+                                    <table className="soundcloud-results-table-large">
+                                        <thead>
+                                            <tr>
+                                                <th>TITLE</th>
+                                                <th>ARTIST</th>
+                                                <th style={{ width: '120px' }}>DURATION</th>
+                                                <th style={{ width: '150px', textAlign: 'center' }}>ACTION</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {soundcloudResults.map((res) => {
+                                                const isTrackDownloading = downloadingUrl === res.url;
+                                                return (
+                                                    <tr key={res.url}>
+                                                        <td className="sc-title-cell">{res.title}</td>
+                                                        <td>{res.uploader}</td>
+                                                        <td>{formatTime(res.duration)}</td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            <button
+                                                                className="sc-import-btn-large"
+                                                                onClick={() => handleSoundCloudDownload(res.url)}
+                                                                disabled={isTrackDownloading || isDownloading}
+                                                            >
+                                                                {isTrackDownloading ? 'Importing...' : 'Import'}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                !searchLoading && (
+                                    <div className="search-empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="empty-search-icon">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                        </svg>
+                                        <h3>No results to display</h3>
+                                        <p>Enter a query above to search for tracks on SoundCloud.</p>
+                                    </div>
+                                )
+                            )}
                         </div>
                     )}
                     {activeTab === 'settings' && (
