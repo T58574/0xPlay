@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 
-// Mock the Wails JS API module
 vi.mock('../wailsjs/go/main/App', () => ({
     LoadTrack: vi.fn(),
     Play: vi.fn(),
@@ -20,6 +19,14 @@ vi.mock('../wailsjs/go/main/App', () => ({
     OpenMusicDir: vi.fn(),
     SetCrossfadeDuration: vi.fn(),
     LogFromJS: vi.fn().mockResolvedValue(undefined),
+    GetPlaylists: vi.fn().mockResolvedValue([]),
+    SavePlaylists: vi.fn().mockResolvedValue(undefined),
+    CreatePlaylist: vi.fn().mockResolvedValue(undefined),
+    DeletePlaylist: vi.fn().mockResolvedValue(undefined),
+    AddTrackToPlaylist: vi.fn().mockResolvedValue(undefined),
+    RemoveTrackFromPlaylist: vi.fn().mockResolvedValue(undefined),
+    SearchSoundCloud: vi.fn().mockResolvedValue([]),
+    DownloadFromSoundCloud: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('App Component', () => {

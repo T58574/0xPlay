@@ -44,16 +44,19 @@ When a local file is added to the library:
     *   The chroma vector is correlated with Krumhansl-Schmuckler profiles for 24 musical keys.
     *   The output is mapped to Camelot Wheel codes (e.g., 8A for A minor, 8B for C major).
 
-### 3.2 Mixing and Transition Engine
-When "Auto-Mix" is enabled and Track A transitions to Track B:
-1.  **BPM Match**: Track B's playback rate is modified via Signalsmith Stretch's time-stretching engine to match Track A's BPM:
-    $$\text{Stretch Factor} = \frac{\text{BPM}_A}{\text{BPM}_B}$$
-2.  **Key Match (Harmonic Alignment)**: 
-    *   Calculate Camelot distance.
-    *   Determine the minimal pitch shift required to move Track B into a harmonically compatible key (e.g., $\pm 1$ semitone or relative key conversion).
-    *   Apply pitch shift to Track B via Signalsmith Stretch without altering speed.
-3.  **Crossfade Execution**:
-    *   Perform a linear or logarithmic crossfade over the configured duration.
+### 3.2 Mixing and Transition Engine (Smart Harmonic Transitions)
+When "Auto-Mix" is enabled and Track A (slot 0) transitions to Track B (slot 1):
+1.  **Beat-Aligned Start**: The transition is triggered exactly on a musical bar boundary close to the end of Track A. The actual crossfade duration is calculated dynamically to span an integer number of bars (e.g. 16 beats / 4 bars) based on Track A's BPM:
+    $$T_{\text{fade}} = \text{round}\left(\frac{C \cdot \text{BPM}_A}{240.0}\right) \cdot \frac{240.0}{\text{BPM}_A}$$
+    where $C$ is the target crossfade duration (default 8s).
+2.  **Dynamic BPM Sync**: Rather than a static rate shift, the tempos of both tracks are continuously and smoothly ramped to match each other throughout the transition, from $\text{BPM}_A$ to $\text{BPM}_B$:
+    $$\text{BPM}(t) = \text{BPM}_A \cdot (1 - t) + \text{BPM}_B \cdot t$$
+    where $t = \frac{\text{elapsed}}{T_{\text{fade}}} \in [0, 1]$.
+    The tempo ratio of Track A (outgoing) and Track B (incoming) is adjusted dynamically at each callback:
+    $$\text{tempo\_ratio}_A(t) = \frac{\text{BPM}(t)}{\text{BPM}_A}, \quad \text{tempo\_ratio}_B(t) = \frac{\text{BPM}(t)}{\text{BPM}_B}$$
+3.  **Harmonic Key Match**: Track B is pitch-shifted to the closest compatible Camelot Wheel key relative to the *current playing key* of Track A (which accounts for Track A's own pitch shifts), using a minimal pitch shift within $\pm 2$ semitones.
+4.  **Equal-Power Crossfade**: An equal-power crossfade is performed to prevent dips in volume in the middle of the transition:
+    $$\text{vol}_A(t) = \cos\left(t \cdot \frac{\pi}{2}\right), \quad \text{vol}_B(t) = \sin\left(t \cdot \frac{\pi}{2}\right)$$
 
 ### 3.3 Music Directory Synchronization
 *   The application creates and manages a folder `.0xplayer` under the user's home directory (`~/.0xplayer`).

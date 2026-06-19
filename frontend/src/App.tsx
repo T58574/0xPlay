@@ -756,7 +756,7 @@ function App() {
                 const nextTrack = st.currentPlaylistTracks[nextPlaylistIndex];
                 const nextOriginalIndex = st.libraryTracks.findIndex(t => t.filePath === nextTrack.filePath);
                 
-                if (updatedPlaying[st.activeSlot] && activeTrack) {
+                if (updatedPlaying[st.activeSlot] && activeTrack && !updatedPlaying[otherSlot]) {
                     const otherTrack = st.tracks[otherSlot];
                     if (!otherTrack || otherTrack.filePath !== nextTrack.filePath) {
                         await handleLoadDeckRef.current(otherSlot, nextTrack.filePath);
