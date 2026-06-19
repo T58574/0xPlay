@@ -216,6 +216,7 @@ function App() {
     const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [dragPosition, setDragPosition] = useState<number | null>(null);
+    const dragPositionRef = useRef<number | null>(null);
     const [playlists, setPlaylists] = useState<PlaylistInfo[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState<boolean>(false);
@@ -698,6 +699,30 @@ function App() {
     useEffect(() => {
         stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks, shuffle, repeat, currentPlaylistTracks };
     });
+
+    useEffect(() => {
+        dragPositionRef.current = dragPosition;
+    }, [dragPosition]);
+
+    useEffect(() => {
+        if (dragPosition === null) return;
+
+        const handleGlobalRelease = () => {
+            const currentPos = dragPositionRef.current;
+            if (currentPos !== null) {
+                handleSeek(activeSlot, currentPos);
+                dragPositionRef.current = null;
+                setDragPosition(null);
+            }
+        };
+
+        window.addEventListener('mouseup', handleGlobalRelease);
+        window.addEventListener('touchend', handleGlobalRelease);
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalRelease);
+            window.removeEventListener('touchend', handleGlobalRelease);
+        };
+    }, [dragPosition === null, activeSlot]);
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -1616,18 +1641,10 @@ function App() {
                             max="1"
                             step="0.001"
                             value={dragPosition !== null ? dragPosition : (tracks[activeSlot] && (tracks[activeSlot]?.durationSec ?? 0) > 0 ? positions[activeSlot] / (tracks[activeSlot]?.durationSec ?? 1) : 0)}
-                            onChange={(e) => setDragPosition(parseFloat(e.target.value))}
-                            onMouseUp={() => {
-                                if (dragPosition !== null) {
-                                    handleSeek(activeSlot, dragPosition);
-                                    setDragPosition(null);
-                                }
-                            }}
-                            onTouchEnd={() => {
-                                if (dragPosition !== null) {
-                                    handleSeek(activeSlot, dragPosition);
-                                    setDragPosition(null);
-                                }
+                            onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                dragPositionRef.current = val;
+                                setDragPosition(val);
                             }}
                             className="progress-slider"
                             style={{

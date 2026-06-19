@@ -62,6 +62,22 @@ When "Auto-Mix" is enabled and Track A (slot 0) transitions to Track B (slot 1):
 *   On startup or request, Go recursively scans this folder for `.mp3`, `.wav`, and `.flac` files, calls the C++ analyzer on any new tracks, and compiles a playlist table.
 *   Users can launch the native file browser (Windows Explorer, Finder, or xdg-open) directly from the player interface to drop music files.
 
+---
+
+## 4. State Management & Interaction Fixes
+
+### 4.1 Track Seek / Progress Slider Freezing
+*   **Problem**: Dragging or clicking the track seek/progress slider caused the slider to freeze permanently at the clicked position, even though the backend successfully performed the track seek. This also kept the slider frozen when playing subsequent tracks.
+*   **Root Cause**: 
+    1. A race condition occurred between React's asynchronous state update (`setDragPosition`) and the synchronous DOM `mouseup`/`touchend` events. When `onChange` triggered a state update, React scheduled a re-render. If `onMouseUp` executed before the re-render finished, the handler read `dragPosition` as `null` from the previous render, skipping the seek finalization.
+    2. If the user dragged the mouse outside the slider boundaries and released, the local `onMouseUp` event on the slider input element never fired at all, leaving `dragPosition` in a non-null state.
+*   **Solution**:
+    1. Added `dragPositionRef` (`useRef`) to store the temporary drag position synchronously.
+    2. Added global `window` event listeners for `mouseup` and `touchend` when dragging is active, ensuring release events are captured anywhere on the screen.
+    3. The global release handler reads from `dragPositionRef.current` synchronously to perform `Seek` and resets `dragPosition` back to `null`.
+
+---
+
 ## 5. API Schema & Interface Definitions
 
 ### 5.1 Go to Frontend Wails Bindings
