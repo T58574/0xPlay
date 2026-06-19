@@ -20710,7 +20710,7 @@ MA_API ma_uint32 ma_get_format_priority_index(ma_format format) /* Lower = bette
     return (ma_uint32)-1;
 }
 
-static ma_result ma_device__post_init_setup(ma_device* pDevice, ma_device_type deviceType);
+static ma_result ma_device__init_converters(ma_device* pDevice, ma_device_type deviceType);
 
 static ma_bool32 ma_device_descriptor_is_valid(const ma_device_descriptor* pDeviceDescriptor)
 {
@@ -24527,7 +24527,7 @@ static ma_result ma_device_reroute__wasapi(ma_device* pDevice, ma_device_type de
         return result;
     }
 
-    ma_device__post_init_setup(pDevice, deviceType);
+    ma_device__init_converters(pDevice, deviceType);
     ma_device__on_notification_rerouted(pDevice);
 
     ma_log_postf(ma_device_get_log(pDevice), MA_LOG_LEVEL_DEBUG, "=== DEVICE CHANGED ===\n");
@@ -35412,7 +35412,7 @@ static OSStatus ma_default_device_changed__coreaudio(AudioObjectID objectID, UIn
                 }
 
                 if (reinitResult == MA_SUCCESS) {
-                    ma_device__post_init_setup(pDevice, deviceType);
+                    ma_device__init_converters(pDevice, deviceType);
 
                     /* Restart the device if required. If this fails we need to stop the device entirely. */
                     if (ma_device_get_state(pDevice) == ma_device_state_started) {
@@ -42492,7 +42492,7 @@ static ma_bool32 ma_context_is_backend_asynchronous(ma_context* pContext)
 }
 
 
-static ma_result ma_device__post_init_setup(ma_device* pDevice, ma_device_type deviceType)
+static ma_result ma_device__init_converters(ma_device* pDevice, ma_device_type deviceType)
 {
     ma_result result;
 
@@ -42755,7 +42755,7 @@ MA_API ma_result ma_device_post_init(ma_device* pDevice, ma_device_type deviceTy
     }
 
     /* Update data conversion. */
-    return ma_device__post_init_setup(pDevice, deviceType); /* TODO: Should probably rename ma_device__post_init_setup() to something better. */
+    return ma_device__init_converters(pDevice, deviceType);
 }
 
 
@@ -43852,7 +43852,7 @@ MA_API ma_result ma_device_init(ma_context* pContext, const ma_device_config* pC
     }
 
 
-    ma_device__post_init_setup(pDevice, pConfig->deviceType);
+    ma_device__init_converters(pDevice, pConfig->deviceType);
 #endif
 
     result = ma_device_post_init(pDevice, pConfig->deviceType, &descriptorPlayback, &descriptorCapture);
@@ -43940,7 +43940,7 @@ MA_API ma_result ma_device_init(ma_context* pContext, const ma_device_config* pC
     } else {
         /*
         If the backend is asynchronous and the device is duplex, we'll need an intermediary ring buffer. Note that this needs to be done
-        after ma_device__post_init_setup().
+        after ma_device__init_converters().
         */
         if (ma_context_is_backend_asynchronous(pContext)) {
             if (pConfig->deviceType == ma_device_type_duplex) {
