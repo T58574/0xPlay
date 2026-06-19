@@ -134,6 +134,25 @@ const SettingsIcon = () => (
     </svg>
 );
 
+const ShuffleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <polyline points="16 3 21 3 21 8"></polyline>
+        <line x1="4" y1="20" x2="21" y2="3"></line>
+        <polyline points="21 16 21 21 16 21"></polyline>
+        <line x1="15" y1="15" x2="21" y2="21"></line>
+        <line x1="4" y1="4" x2="9" y2="9"></line>
+    </svg>
+);
+
+const RepeatIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+        <polyline points="17 1 21 5 17 9"></polyline>
+        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+        <polyline points="7 23 3 19 7 15"></polyline>
+        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+    </svg>
+);
+
 function App() {
     const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings'>('library');
     const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(8.0);
@@ -172,6 +191,8 @@ function App() {
     const [tempos, setTempos] = useState<[number, number]>([1.0, 1.0]);
     const [pitches, setPitches] = useState<[number, number]>([0.0, 0.0]);
     const [autoMix, setAutoMix] = useState<boolean>(false);
+    const [shuffle, setShuffle] = useState<boolean>(false);
+    const [repeat, setRepeat] = useState<boolean>(false);
 
     const canvasRef0 = useRef<HTMLCanvasElement | null>(null);
     const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
@@ -201,6 +222,7 @@ function App() {
     // поэтому без этого ref он видел бы устаревший currentTrackIndex=-1.
     const handleNextRef = useRef<() => void>(() => {});
     const handleLoadDeckRef = useRef<(slot: number, path: string) => Promise<void>>(async () => {});
+    const handleSeekRef = useRef<(slot: number, pct: number) => Promise<void>>(async () => {});
 
     const stateRef = useRef({
         tracks: [null, null] as [TrackInfo | null, TrackInfo | null],
@@ -209,7 +231,9 @@ function App() {
         activeSlot: 0 as 0 | 1,
         currentTrackIndex: -1,
         autoMix: false,
-        libraryTracks: [] as TrackInfo[]
+        libraryTracks: [] as TrackInfo[],
+        shuffle: false,
+        repeat: false
     });
 
     const getFilename = (path: string) => {
@@ -395,7 +419,10 @@ function App() {
             uiLog('WARN', 'handleNext: уже идёт переключение — пропуск');
             return;
         }
-        const nextIndex = (currentTrackIndex + 1) % libraryTracks.length;
+        let nextIndex = (currentTrackIndex + 1) % libraryTracks.length;
+        if (shuffle) {
+            nextIndex = Math.floor(Math.random() * libraryTracks.length);
+        }
         uiLog('INFO', `handleNext: ${currentTrackIndex} -> ${nextIndex}`);
         await handlePlayLibraryTrack(nextIndex);
     };
@@ -406,7 +433,10 @@ function App() {
             uiLog('WARN', 'handlePrev: уже идёт переключение — пропуск');
             return;
         }
-        const prevIndex = (currentTrackIndex - 1 + libraryTracks.length) % libraryTracks.length;
+        let prevIndex = (currentTrackIndex - 1 + libraryTracks.length) % libraryTracks.length;
+        if (shuffle) {
+            prevIndex = Math.floor(Math.random() * libraryTracks.length);
+        }
         uiLog('INFO', `handlePrev: ${currentTrackIndex} -> ${prevIndex}`);
         await handlePlayLibraryTrack(prevIndex);
     };
@@ -451,6 +481,8 @@ function App() {
         setPositions(updated);
     };
 
+    handleSeekRef.current = handleSeek;
+
     const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>, slot: number) => {
         const canvas = e.currentTarget;
         const rect = canvas.getBoundingClientRect();
@@ -471,7 +503,7 @@ function App() {
     }, []);
 
     useEffect(() => {
-        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks };
+        stateRef.current = { tracks, playing, positions, activeSlot, currentTrackIndex, autoMix, libraryTracks, shuffle, repeat };
     });
 
     useEffect(() => {
@@ -500,13 +532,22 @@ function App() {
             if (activeTrack && activeIsPlaying && activeTrack.durationSec > 0 && activePos >= activeTrack.durationSec - 0.5) {
                 if (!st.autoMix) {
                     uiLog('INFO', `interval: трек закончен pos=${activePos.toFixed(2)} dur=${activeTrack.durationSec.toFixed(2)} -> next`);
-                    handleNextRef.current();
+                    if (st.repeat) {
+                        handleSeekRef.current(st.activeSlot, 0);
+                    } else {
+                        handleNextRef.current();
+                    }
                 }
             }
 
             if (st.autoMix && st.libraryTracks.length > 0) {
                 const otherSlot = st.activeSlot === 0 ? 1 : 0;
-                const nextIndex = (st.currentTrackIndex + 1) % st.libraryTracks.length;
+                let nextIndex = (st.currentTrackIndex + 1) % st.libraryTracks.length;
+                if (st.repeat) {
+                    nextIndex = st.currentTrackIndex;
+                } else if (st.shuffle) {
+                    nextIndex = Math.floor(Math.random() * st.libraryTracks.length);
+                }
                 const nextTrack = st.libraryTracks[nextIndex];
                 
                 if (updatedPlaying[st.activeSlot] && activeTrack) {
@@ -1004,6 +1045,9 @@ function App() {
 
                 <div className="playback-middle">
                     <div className="playback-bar-controls">
+                        <button className={`nav-ctrl-btn ${shuffle ? 'active' : ''}`} onClick={() => setShuffle(!shuffle)}>
+                            <ShuffleIcon />
+                        </button>
                         <button className="nav-ctrl-btn" onClick={handlePrev}>
                             <PrevIcon />
                         </button>
@@ -1012,6 +1056,9 @@ function App() {
                         </button>
                         <button className="nav-ctrl-btn" onClick={handleNext}>
                             <NextIcon />
+                        </button>
+                        <button className={`nav-ctrl-btn ${repeat ? 'active' : ''}`} onClick={() => setRepeat(!repeat)}>
+                            <RepeatIcon />
                         </button>
                     </div>
 
