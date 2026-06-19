@@ -426,7 +426,7 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
         }
     }
     
-    if (ts.tempo_ratio == 1.0 && ts.pitch_semi == 0.0) {
+    if (!g_automix_enabled && ts.tempo_ratio == 1.0 && ts.pitch_semi == 0.0) {
         ma_uint64 read_frames = 0;
         ma_decoder_read_pcm_frames(&ts.decoder, out_buffer, frame_count, &read_frames);
         for (ma_uint64 i = 0; i < read_frames * channels; i++) {
@@ -685,6 +685,13 @@ int load_track(int slot, const char* file_path) {
     ENGINE_LOGI("load_track slot=%d path=%s", slot, file_path);
     engine_log_open();
     if (slot < 0 || slot > 1) return 0;
+
+    double dur = 0.0;
+    double bpm = 120.0;
+    const char* key = "8A";
+    std::vector<float> wf;
+    analyze_audio(file_path, &dur, &bpm, &key, wf);
+
     TrackState& ts = g_tracks[slot];
     std::lock_guard<std::mutex> lock(ts.mtx);
     if (ts.has_decoder) {
@@ -710,11 +717,6 @@ int load_track(int slot, const char* file_path) {
     ENGINE_LOGI("load_track: decoder ready slot=%d sr=%u ch=%u",
                 slot, ts.decoder.outputSampleRate, ts.decoder.outputChannels);
 
-    double dur = 0.0;
-    double bpm = 120.0;
-    const char* key = "8A";
-    std::vector<float> wf;
-    analyze_audio(file_path, &dur, &bpm, &key, wf);
     ts.duration = dur;
     ts.bpm = bpm;
     ts.key = key;

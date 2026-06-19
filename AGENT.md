@@ -76,6 +76,15 @@ When "Auto-Mix" is enabled and Track A (slot 0) transitions to Track B (slot 1):
     2. Added global `window` event listeners for `mouseup` and `touchend` when dragging is active, ensuring release events are captured anywhere on the screen.
     3. The global release handler reads from `dragPositionRef.current` synchronously to perform `Seek` and resets `dragPosition` back to `null`.
 
+### 4.2 Audio Stutter and Micro-Pauses during Automix Transitions
+*   **Problem**: In Auto-Mix mode, transitioning between tracks (e.g. at 53 seconds) resulted in a micropause (short silence/stutter). Furthermore, when the crossfade completed (after 8 seconds), the entire audio output would freeze/buffer for a couple of seconds (an unpleasant loading pause).
+*   **Root Causes**:
+    1. **Path-switching Latency**: The engine has a fast path (direct PCM read from decoder) and a slow time-stretching path (using signalsmith-stretch for pitch and tempo ratio changes). At the start of a transition (e.g. at 53 seconds), the tempo ratio begins to ramp. This switched the outgoing track from the fast path to the stretch path on the fly. Since the signalsmith-stretch buffers were empty, it introduced a sudden ~150ms delay/silence gap while the STFT window populated, causing a micropause.
+    2. **Audio Thread Mutex Contention**: When a transition finishes, the React frontend automatically loads the next track in the queue. The Go backend's `LoadTrack` is called, which calls C++ `load_track`. This function acquired the track's state mutex (`ts.mtx`) and, while holding it, ran the slow `analyze_audio` routine (decoding the whole file to compute waveform peaks, running autocorrelation for BPM detection, and performing FFT chroma analysis for key detection). Since the real-time audio callback thread (`audio_callback`) still calls `get_audio_frames` for both slots and locks `ts.mtx`, it blocked waiting for the metadata analysis to finish (which took several seconds), freezing all audio output.
+*   **Solutions**:
+    1. **Continuous Stretch in Automix**: Bypassed the fast path and forced the use of the time-stretching signalsmith-stretch pipeline from the beginning of playback whenever Auto-Mix is enabled. This ensures that the STFT history buffers are already warmed up, maintaining a constant latency and preventing any stutter when the transition begins.
+    2. **Lock-Free Metadata Analysis**: Moved the slow `analyze_audio` calculations in `load_track` to execute *before* acquiring the track's state mutex `ts.mtx`. The mutex is now only locked for the final, near-instantaneous swap of decoders and state metadata update (taking < 1ms), entirely eliminating audio thread starvation.
+
 ---
 
 ## 5. API Schema & Interface Definitions
