@@ -77,3 +77,75 @@ func TestLogger(t *testing.T) {
 		t.Error("appLogFile is not nil after CloseLogger")
 	}
 }
+
+func resetLoggerForTest() {
+	appLoggerOnce = sync.Once{}
+	appLogger = nil
+	appLogFile = nil
+	appLoggerOn = true
+}
+
+func TestLogger_InitErrors(t *testing.T) {
+	origHome := os.Getenv("HOME")
+	origProfile := os.Getenv("USERPROFILE")
+	defer func() {
+		os.Setenv("HOME", origHome)
+		if origProfile != "" {
+			os.Setenv("USERPROFILE", origProfile)
+		}
+	}()
+
+	t.Run("HomeDirError", func(t *testing.T) {
+		resetLoggerForTest()
+		os.Unsetenv("HOME")
+		os.Unsetenv("USERPROFILE") // For Windows
+		InitLogger()
+		if appLogFile != nil {
+			t.Error("appLogFile should be nil when HOME and USERPROFILE are unset")
+		}
+	})
+
+	t.Run("MkdirError", func(t *testing.T) {
+		resetLoggerForTest()
+		tempHome, err := os.MkdirTemp("", "logger_test_err_*")
+		if err != nil {
+			t.Fatalf("Failed to create temp home: %v", err)
+		}
+		defer os.RemoveAll(tempHome)
+		os.Setenv("HOME", tempHome)
+
+		// Create a file where the directory should be
+		fileDir := filepath.Join(tempHome, ".0xplayer")
+		if err := os.WriteFile(fileDir, []byte("file content"), 0644); err != nil {
+			t.Fatalf("Failed to create blocking file: %v", err)
+		}
+
+		InitLogger()
+		if appLogFile != nil {
+			t.Error("appLogFile should be nil when MkdirAll fails")
+		}
+	})
+
+	t.Run("OpenFileError", func(t *testing.T) {
+		resetLoggerForTest()
+		tempHome, err := os.MkdirTemp("", "logger_test_err_*")
+		if err != nil {
+			t.Fatalf("Failed to create temp home: %v", err)
+		}
+		defer os.RemoveAll(tempHome)
+		os.Setenv("HOME", tempHome)
+
+		logDir := filepath.Join(tempHome, ".0xplayer")
+		logPath := filepath.Join(logDir, "player.log")
+
+		// Create a directory where the log file should be
+		if err := os.MkdirAll(logPath, 0755); err != nil {
+			t.Fatalf("Failed to create blocking directory: %v", err)
+		}
+
+		InitLogger()
+		if appLogFile != nil {
+			t.Error("appLogFile should be nil when OpenFile fails")
+		}
+	})
+}
