@@ -49,7 +49,7 @@ func InitLogger() {
 			return
 		}
 		logPath := filepath.Join(dir, "player.log")
-		f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			Log(LogWarn, "logger", "не удалось открыть лог-файл %s: %v", logPath, err)
 			return
