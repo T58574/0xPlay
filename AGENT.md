@@ -199,3 +199,8 @@ if (results.length > 0) {
     await App.DownloadFromSoundCloud(results[0].url);
 }
 ```
+
+---
+
+## 6. Project Updates & Changelog
+* **2026-06-19**: Updated `README.md` with beautiful Russian documentation structure, including system architecture mermaid diagram fixes (closed code block syntax), automix LaTeX equations formatting, key features detail, tech stack components, instructions for development/build, and GitHub Actions CI/CD pipeline documentation.
