@@ -34,9 +34,9 @@ export function RemoveTrackFromPlaylist(arg1:string,arg2:string):Promise<void>;
 
 export function SavePlaylists(arg1:Array<main.Playlist>):Promise<void>;
 
-export function SearchSoundCloud(arg1:string):Promise<Array<main.SoundCloudResult>>;
-
 export function ScanMusicDir():Promise<Array<main.TrackMetadata>>;
+
+export function SearchSoundCloud(arg1:string):Promise<Array<main.SoundCloudResult>>;
 
 export function Seek(arg1:number,arg2:number):Promise<void>;
 

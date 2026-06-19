@@ -66,12 +66,12 @@ export function SavePlaylists(arg1) {
   return window['go']['main']['App']['SavePlaylists'](arg1);
 }
 
-export function SearchSoundCloud(arg1) {
-  return window['go']['main']['App']['SearchSoundCloud'](arg1);
-}
-
 export function ScanMusicDir() {
   return window['go']['main']['App']['ScanMusicDir']();
+}
+
+export function SearchSoundCloud(arg1) {
+  return window['go']['main']['App']['SearchSoundCloud'](arg1);
 }
 
 export function Seek(arg1, arg2) {

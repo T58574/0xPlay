@@ -14,6 +14,24 @@ export namespace main {
 	        this.trackPaths = source["trackPaths"];
 	    }
 	}
+	export class SoundCloudResult {
+	    title: string;
+	    uploader: string;
+	    url: string;
+	    duration: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SoundCloudResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.title = source["title"];
+	        this.uploader = source["uploader"];
+	        this.url = source["url"];
+	        this.duration = source["duration"];
+	    }
+	}
 	export class TrackMetadata {
 	    filePath: string;
 	    durationSec: number;
@@ -36,24 +54,6 @@ export namespace main {
 	        this.waveform = source["waveform"];
 	        this.artist = source["artist"];
 	        this.genre = source["genre"];
-	    }
-	}
-	export class SoundCloudResult {
-	    title: string;
-	    uploader: string;
-	    url: string;
-	    duration: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new SoundCloudResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.title = source["title"];
-	        this.uploader = source["uploader"];
-	        this.url = source["url"];
-	        this.duration = source["duration"];
 	    }
 	}
 
