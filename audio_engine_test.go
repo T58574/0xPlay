@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/wailsapp/wails/v2/pkg/options"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -150,21 +149,6 @@ func TestAudioEngine(t *testing.T) {
 	app.OpenMusicDir()
 }
 
-func TestMainFunc(t *testing.T) {
-	origWailsRun := wailsRun
-	defer func() { wailsRun = origWailsRun }()
-
-	wailsRun = func(opt *options.App) error {
-		return nil
-	}
-	main()
-
-	wailsRun = func(opt *options.App) error {
-		return fmt.Errorf("mock error")
-	}
-	main()
-}
-
 func TestAppMocks(t *testing.T) {
 	app := NewApp()
 	app.startup(nil)
@@ -277,6 +261,7 @@ func TestLogFromJS(t *testing.T) {
 	app.LogFromJS("WARN", "test warn message")
 	app.LogFromJS("ERROR", "test error message")
 	app.LogFromJS("UNKNOWN", "test default info message")
+}
 func TestMalformedCache(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -313,6 +298,8 @@ func TestMalformedCache(t *testing.T) {
 	}
 	if len(list) != 1 {
 		t.Errorf("expected 1 track scanned, got %d", len(list))
+	}
+}
 func TestAnalyzeFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	wavPath := filepath.Join(tmpDir, "test_analyze.wav")

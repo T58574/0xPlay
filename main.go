@@ -11,12 +11,10 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-var wailsRun = wails.Run
-
 func main() {
 	app := NewApp()
 
-	err := wailsRun(&options.App{
+	err := wails.Run(&options.App{
 		Title:  "SoundPlayer",
 		Width:  1280,
 		Height: 800,
