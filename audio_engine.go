@@ -52,17 +52,22 @@ func LoadTrack(slot int, filePath string) bool {
 	return ok
 }
 
-func GetTrackMetadata(slot int, filePath string) TrackMetadata {
-	Log(LogDebug, "engine", "get_track_metadata slot=%d", slot)
-	metaC := C.get_track_metadata(C.int(slot))
-	defer C.free_track_metadata(metaC)
-
+func extractWaveform(metaC C.TrackMetadataC) []float32 {
 	var waveform []float32
 	if metaC.waveformSize > 0 && metaC.waveformData != nil {
 		waveformSlice := (*[1 << 28]float32)(unsafe.Pointer(metaC.waveformData))[:metaC.waveformSize:metaC.waveformSize]
 		waveform = make([]float32, metaC.waveformSize)
 		copy(waveform, waveformSlice)
 	}
+	return waveform
+}
+
+func GetTrackMetadata(slot int, filePath string) TrackMetadata {
+	Log(LogDebug, "engine", "get_track_metadata slot=%d", slot)
+	metaC := C.get_track_metadata(C.int(slot))
+	defer C.free_track_metadata(metaC)
+
+	waveform := extractWaveform(metaC)
 
 	key := ""
 	if metaC.keySignature != nil {
@@ -141,12 +146,7 @@ func AnalyzeFile(filePath string) TrackMetadata {
 	metaC := C.analyze_file(cPath)
 	defer C.free_track_metadata(metaC)
 
-	var waveform []float32
-	if metaC.waveformSize > 0 && metaC.waveformData != nil {
-		waveformSlice := (*[1 << 28]float32)(unsafe.Pointer(metaC.waveformData))[:metaC.waveformSize:metaC.waveformSize]
-		waveform = make([]float32, metaC.waveformSize)
-		copy(waveform, waveformSlice)
-	}
+	waveform := extractWaveform(metaC)
 
 	key := ""
 	if metaC.keySignature != nil {
