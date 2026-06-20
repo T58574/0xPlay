@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import {
@@ -322,28 +322,40 @@ function App() {
         return parts[parts.length - 1];
     };
 
-    const currentPlaylistTracks = selectedPlaylist
-        ? libraryTracks.filter(t => playlists.find(p => p.name === selectedPlaylist)?.trackPaths?.includes(t.filePath))
-        : libraryTracks;
+    const currentPlaylistTracks = useMemo(() => {
+        return selectedPlaylist
+            ? libraryTracks.filter(t => playlists.find(p => p.name === selectedPlaylist)?.trackPaths?.includes(t.filePath))
+            : libraryTracks;
+    }, [selectedPlaylist, libraryTracks, playlists]);
 
-    const availableArtists = Array.from(new Set(libraryTracks.map(t => t.artist || 'Unknown Artist'))).filter(Boolean).sort();
-    const availableGenres = Array.from(new Set(libraryTracks.map(t => t.genre || 'Unknown Genre'))).filter(Boolean).sort();
+    const availableArtists = useMemo(() => {
+        return Array.from(new Set(libraryTracks.map(t => t.artist || 'Unknown Artist'))).filter(Boolean).sort();
+    }, [libraryTracks]);
 
-    const filteredTracks = currentPlaylistTracks.filter(track => {
-        const filename = getFilename(track.filePath).toLowerCase();
-        const artist = (track.artist || 'Unknown Artist').toLowerCase();
-        const genre = (track.genre || 'Unknown Genre').toLowerCase();
-        const query = searchQuery.toLowerCase();
-        
-        const matchesQuery = filename.includes(query) || artist.includes(query) || genre.includes(query);
-        const matchesArtist = !selectedArtist || (track.artist || 'Unknown Artist') === selectedArtist;
-        const matchesGenre = !selectedGenre || (track.genre || 'Unknown Genre') === selectedGenre;
-        
-        return matchesQuery && matchesArtist && matchesGenre;
-    });
+    const availableGenres = useMemo(() => {
+        return Array.from(new Set(libraryTracks.map(t => t.genre || 'Unknown Genre'))).filter(Boolean).sort();
+    }, [libraryTracks]);
 
-    const totalDuration = currentPlaylistTracks.reduce((acc, t) => acc + t.durationSec, 0);
-    const totalDurationStr = (() => {
+    const filteredTracks = useMemo(() => {
+        return currentPlaylistTracks.filter(track => {
+            const filename = getFilename(track.filePath).toLowerCase();
+            const artist = (track.artist || 'Unknown Artist').toLowerCase();
+            const genre = (track.genre || 'Unknown Genre').toLowerCase();
+            const query = searchQuery.toLowerCase();
+
+            const matchesQuery = filename.includes(query) || artist.includes(query) || genre.includes(query);
+            const matchesArtist = !selectedArtist || (track.artist || 'Unknown Artist') === selectedArtist;
+            const matchesGenre = !selectedGenre || (track.genre || 'Unknown Genre') === selectedGenre;
+
+            return matchesQuery && matchesArtist && matchesGenre;
+        });
+    }, [currentPlaylistTracks, searchQuery, selectedArtist, selectedGenre]);
+
+    const totalDuration = useMemo(() => {
+        return currentPlaylistTracks.reduce((acc, t) => acc + t.durationSec, 0);
+    }, [currentPlaylistTracks]);
+
+    const totalDurationStr = useMemo(() => {
         const h = Math.floor(totalDuration / 3600);
         const m = Math.floor((totalDuration % 3600) / 60);
         const s = Math.floor(totalDuration % 60);
@@ -351,7 +363,7 @@ function App() {
             return `${h} hr ${m} min`;
         }
         return `${m} min ${s} sec`;
-    })();
+    }, [totalDuration]);
 
     const loadLibrary = async () => {
         try {
