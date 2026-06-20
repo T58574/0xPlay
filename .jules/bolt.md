@@ -1,0 +1,3 @@
+## 2024-11-20 - Memoize expensive library filtering
+**Learning:** High-frequency state updates (like a 100ms interval for track playback positions) mixed with un-memoized, heavy array processing (.filter, .map, Set, .sort on thousands of tracks) inside the render loop leads to massive CPU bottlenecks and main thread blocking in this React application.
+**Action:** Always verify if components using `setInterval` for playback/UI updates also perform heavy list processing, and rigorously enforce the use of `useMemo` for derived states to prevent complete app freezes when a user's library grows large.
