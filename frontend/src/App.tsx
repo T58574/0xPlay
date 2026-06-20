@@ -18,6 +18,7 @@ import {
     SetCrossfadeDuration,
     LogFromJS
 } from "../wailsjs/go/main/App";
+import { Equalizer } from './Equalizer';
 
 interface TrackInfo {
     filePath: string;
@@ -115,6 +116,20 @@ const VolumeIcon = () => (
     </svg>
 );
 
+const EQIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+        <line x1="4" y1="21" x2="4" y2="14" />
+        <line x1="4" y1="10" x2="4" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12" y2="3" />
+        <line x1="20" y1="21" x2="20" y2="16" />
+        <line x1="20" y1="12" x2="20" y2="3" />
+        <line x1="1" y1="14" x2="7" y2="14" />
+        <line x1="9" y1="8" x2="15" y2="8" />
+        <line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+);
+
 const BoltIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -143,6 +158,7 @@ function App() {
     const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [dragPosition, setDragPosition] = useState<number | null>(null);
+    const [isEqOpen, setIsEqOpen] = useState<boolean>(false);
     const [currentTheme, setCurrentTheme] = useState<string>('emerald');
 
     const themes = {
@@ -1063,6 +1079,16 @@ function App() {
                     </div>
 
                     <div className="bar-volume">
+                        <button
+                            onClick={() => setIsEqOpen(!isEqOpen)}
+                            style={{
+                                background: 'transparent', border: 'none', color: isEqOpen ? 'var(--accent-color, #22C55E)' : '#888', cursor: 'pointer', padding: '4px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            title="Equalizer"
+                        >
+                            <EQIcon />
+                        </button>
                         <span className="vol-icon"><VolumeIcon /></span>
                         <input
                             type="range"
@@ -1079,6 +1105,9 @@ function App() {
                     </div>
                 </div>
             </footer>
+            <div style={{ display: isEqOpen ? 'block' : 'none', position: 'fixed', bottom: '80px', right: '20px', zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', borderRadius: '12px' }}>
+                <Equalizer activeSlot={activeSlot} />
+            </div>
         </div>
     );
 }

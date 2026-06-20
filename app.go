@@ -105,6 +105,14 @@ func (a *App) ToggleAutoMix(enabled bool) {
 	SetAutomixEnabled(enabled)
 }
 
+func (a *App) SetEQEnabled(slot int, enabled bool) {
+	SetEQEnabled(slot, enabled)
+}
+
+func (a *App) SetEQBand(slot int, bandIndex int, gainDB float64) {
+	SetEQBand(slot, bandIndex, gainDB)
+}
+
 func (a *App) SetCrossfadeDuration(durationSec float64) {
 	Log(LogInfo, "app", "SetCrossfadeDuration=%.1fs", durationSec)
 	SetCrossfadeDuration(durationSec)

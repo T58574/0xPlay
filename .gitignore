@@ -110,3 +110,4 @@ logs/
 # --- APP CUSTOM ---
 go-server/dist/
 go-server/config/
+SoundPlayer

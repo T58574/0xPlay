@@ -30,6 +30,9 @@ void set_crossfade_duration(double duration_sec);
 void free_track_metadata(TrackMetadataC metadata);
 TrackMetadataC analyze_file(const char* file_path);
 
+void set_eq_enabled(int slot, int enabled);
+void set_eq_band(int slot, int band_index, float gain_db);
+
 #ifdef __cplusplus
 }
 #endif

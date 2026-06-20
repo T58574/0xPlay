@@ -50,6 +50,14 @@ export function SetCrossfadeDuration(arg1) {
   return window['go']['main']['App']['SetCrossfadeDuration'](arg1);
 }
 
+export function SetEQBand(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetEQBand'](arg1, arg2, arg3);
+}
+
+export function SetEQEnabled(arg1, arg2) {
+  return window['go']['main']['App']['SetEQEnabled'](arg1, arg2);
+}
+
 export function SetPitch(arg1, arg2) {
   return window['go']['main']['App']['SetPitch'](arg1, arg2);
 }

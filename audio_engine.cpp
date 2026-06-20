@@ -82,6 +82,11 @@ struct TrackState {
     double bpm = 120.0;
     std::string key = "8A";
     std::vector<float> waveform;
+
+    bool eq_enabled = false;
+    ma_peak2 eq_bands[10];
+    float eq_gains[10] = {0.0f};
+
     std::mutex mtx;
 };
 
@@ -467,6 +472,13 @@ static void get_audio_frames(TrackState& ts, float* out_buffer, int frame_count,
         out_buffer[i * channels] = chan_out[0][i] * ts.volume;
         out_buffer[i * channels + 1] = chan_out[1][i] * ts.volume;
     }
+
+    if (ts.eq_enabled) {
+        for (int b = 0; b < 10; b++) {
+            // Process EQ even when gain is 0 to avoid audio clicks from stale delay lines
+            ma_peak2_process_pcm_frames(&ts.eq_bands[b], out_buffer, out_buffer, frame_count);
+        }
+    }
 }
 
 static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
@@ -640,6 +652,12 @@ int load_track(int slot, const char* file_path) {
         ENGINE_LOGE("load_track: decoder init FAILED slot=%d path=%s", slot, file_path);
         return 0;
     }
+
+    double eq_freqs[10] = {60.0, 170.0, 310.0, 600.0, 1000.0, 3000.0, 6000.0, 12000.0, 14000.0, 16000.0};
+    for (int i = 0; i < 10; i++) {
+        ma_peak2_config eq_cfg = ma_peak2_config_init(ma_format_f32, ts.decoder.outputChannels, ts.decoder.outputSampleRate, ts.eq_gains[i], 1.0, eq_freqs[i]);
+        ma_peak2_init(&eq_cfg, NULL, &ts.eq_bands[i]);
+    }
     ts.has_decoder = true;
     ENGINE_LOGI("load_track: decoder ready slot=%d sr=%u ch=%u",
                 slot, ts.decoder.outputSampleRate, ts.decoder.outputChannels);
@@ -756,6 +774,26 @@ void set_crossfade_duration(double duration_sec) {
     if (duration_sec > 30.0) duration_sec = 30.0;
     g_crossfade_duration = duration_sec;
     ENGINE_LOGI("set_crossfade_duration=%.1fs", duration_sec);
+}
+
+void set_eq_enabled(int slot, int enabled) {
+    if (slot < 0 || slot > 1) return;
+    std::lock_guard<std::mutex> lock(g_tracks[slot].mtx);
+    g_tracks[slot].eq_enabled = (enabled != 0);
+    ENGINE_LOGI("set_eq_enabled slot=%d enabled=%d", slot, enabled);
+}
+
+void set_eq_band(int slot, int band_index, float gain_db) {
+    if (slot < 0 || slot > 1 || band_index < 0 || band_index >= 10) return;
+    std::lock_guard<std::mutex> lock(g_tracks[slot].mtx);
+    TrackState& ts = g_tracks[slot];
+    ts.eq_gains[band_index] = gain_db;
+    if (ts.has_decoder) {
+        double eq_freqs[10] = {60.0, 170.0, 310.0, 600.0, 1000.0, 3000.0, 6000.0, 12000.0, 14000.0, 16000.0};
+        ma_peak2_config eq_cfg = ma_peak2_config_init(ma_format_f32, ts.decoder.outputChannels, ts.decoder.outputSampleRate, gain_db, 1.0, eq_freqs[band_index]);
+        ma_peak2_reinit(&eq_cfg, &ts.eq_bands[band_index]);
+    }
+    ENGINE_LOGI("set_eq_band slot=%d band=%d gain=%.1fdB", slot, band_index, gain_db);
 }
 
 void free_track_metadata(TrackMetadataC metadata) {

@@ -120,6 +120,20 @@ func IsTrackPlaying(slot int) bool {
 	return playing
 }
 
+func SetEQEnabled(slot int, enabled bool) {
+	val := 0
+	if enabled {
+		val = 1
+	}
+	Log(LogInfo, "engine", "set_eq_enabled slot=%d enabled=%v", slot, enabled)
+	C.set_eq_enabled(C.int(slot), C.int(val))
+}
+
+func SetEQBand(slot int, bandIndex int, gainDB float64) {
+	Log(LogDebug, "engine", "set_eq_band slot=%d band=%d gain=%.1f", slot, bandIndex, gainDB)
+	C.set_eq_band(C.int(slot), C.int(bandIndex), C.float(gainDB))
+}
+
 func SetAutomixEnabled(enabled bool) {
 	val := 0
 	if enabled {

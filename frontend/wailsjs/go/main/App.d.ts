@@ -26,6 +26,10 @@ export function SelectAudioFile():Promise<string>;
 
 export function SetCrossfadeDuration(arg1:number):Promise<void>;
 
+export function SetEQBand(arg1:number,arg2:number,arg3:number):Promise<void>;
+
+export function SetEQEnabled(arg1:number,arg2:boolean):Promise<void>;
+
 export function SetPitch(arg1:number,arg2:number):Promise<void>;
 
 export function SetTempo(arg1:number,arg2:number):Promise<void>;
