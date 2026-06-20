@@ -1616,19 +1616,19 @@ function App() {
 
                 <div className="playback-middle">
                     <div className="playback-bar-controls">
-                        <button className={`nav-ctrl-btn ${shuffle ? 'active' : ''}`} onClick={() => setShuffle(!shuffle)}>
+                        <button aria-label={shuffle ? "Disable shuffle" : "Enable shuffle"} className={`nav-ctrl-btn ${shuffle ? 'active' : ''}`} onClick={() => setShuffle(!shuffle)}>
                             <ShuffleIcon />
                         </button>
-                        <button className="nav-ctrl-btn" onClick={handlePrev}>
+                        <button aria-label="Previous track" className="nav-ctrl-btn" onClick={handlePrev}>
                             <PrevIcon />
                         </button>
-                        <button className="global-play-btn" onClick={handleGlobalPlayPause}>
+                        <button aria-label={playing[activeSlot] ? "Pause" : "Play"} className="global-play-btn" onClick={handleGlobalPlayPause}>
                             {playing[activeSlot] ? <PauseIcon /> : <PlayIcon />}
                         </button>
-                        <button className="nav-ctrl-btn" onClick={handleNext}>
+                        <button aria-label="Next track" className="nav-ctrl-btn" onClick={handleNext}>
                             <NextIcon />
                         </button>
-                        <button className={`nav-ctrl-btn ${repeat ? 'active' : ''}`} onClick={() => setRepeat(!repeat)}>
+                        <button aria-label={repeat ? "Disable repeat" : "Enable repeat"} className={`nav-ctrl-btn ${repeat ? 'active' : ''}`} onClick={() => setRepeat(!repeat)}>
                             <RepeatIcon />
                         </button>
                     </div>
