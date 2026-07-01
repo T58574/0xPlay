@@ -59,6 +59,47 @@ const MOOD_TO_PALETTE: Record<string, string> = {
     peaceful: 'trust'
 };
 
+const getTrackPalette = (filePath: string): Palette => {
+    let hash = 0;
+    for (let i = 0; i < filePath.length; i++) {
+        hash = filePath.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    hash = Math.abs(hash);
+    const baseHue = hash % 360;
+    const secondaryHue = (baseHue + 40 + (hash % 80)) % 360;
+    const accentHue = (baseHue + 120 + (hash % 120)) % 360;
+    const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+        h /= 360;
+        s /= 100;
+        l /= 100;
+        let r = l;
+        let g = l;
+        let b = l;
+        if (s !== 0) {
+            const hue2rgb = (p: number, q: number, t: number) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+        return [r, g, b];
+    };
+    return {
+        bg: hslToRgb(baseHue, 35, 4),
+        accent: hslToRgb(accentHue, 95, 55),
+        surface: hslToRgb(baseHue, 90, 45),
+        muted: hslToRgb(secondaryHue, 85, 40)
+    };
+};
+
 export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
     activeSlot,
     tracks,
@@ -150,10 +191,9 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
         };
 
         const activeTrack = tracks[activeSlot];
-        const initialTheme = (playing[activeSlot] && activeTrack?.mood)
-            ? (MOOD_TO_PALETTE[activeTrack.mood] || currentTheme)
-            : currentTheme;
-        const initialPalette = PALETTES[initialTheme] || PALETTES.saas;
+        const initialPalette = (activeTrack?.filePath)
+            ? getTrackPalette(activeTrack.filePath)
+            : (PALETTES[currentTheme] || PALETTES.saas);
 
         currentColors.bg = [...initialPalette.bg];
         currentColors.accent = [...initialPalette.accent];
@@ -216,11 +256,9 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
             phaseHigh += frameDt * (0.18 + smoothed.high * 1.8);
 
             const currentActiveTrack = tracks[audioStateRef.current.activeSlot];
-            const currentIsPlaying = audioStateRef.current.playing[audioStateRef.current.activeSlot];
-            const targetTheme = (currentIsPlaying && currentActiveTrack?.mood)
-                ? (MOOD_TO_PALETTE[currentActiveTrack.mood] || currentTheme)
-                : currentTheme;
-            const targetPalette = PALETTES[targetTheme] || PALETTES.saas;
+            const targetPalette = (currentActiveTrack?.filePath)
+                ? getTrackPalette(currentActiveTrack.filePath)
+                : (PALETTES[currentTheme] || PALETTES.saas);
 
             const lerpSpeed = 0.04;
             for (let i = 0; i < 3; i++) {

@@ -216,6 +216,7 @@ if (results.length > 0) {
 * **2026-07-02 (5)**: Fixed a frontend compilation issue caused by moving `App` backend package location (updated wailsjs import paths to `../wailsjs/go/backend/App` in `App.tsx` and `App.test.tsx`). Added a Windows `build.bat` script automating backend tests, frontend validations, and the final standalone Wails compilation.
 * **2026-07-02 (6)**: Fixed an issue in the "Musicians Library" where tracks with multiple artists (separated by commas, ampersands, or featuring tags) were grouped under a single composite string rather than split into individual artists. Created `splitArtists` utility inside `frontend/src/utils.ts` and refactored `App.tsx` and `MusiciansView.tsx` to group and filter tracks dynamically on split values, so collaborative tracks correctly appear under each individual artist.
 * **2026-07-02 (7)**: Optimized WebGL fluid visualizer to minimize GPU/CPU utilization. Throttled rendering loop to a strict 30 FPS using delta time checks and downsampled the WebGL canvas dimensions by a factor of 3 to run at 1/9th pixel count (relying on bilinear CSS scaling). Redesigned the fragment shader to use hardware-optimized trigonometric domain warping instead of complex multi-octave FBM noise loops.
+* **2026-07-02 (8)**: Redesigned the WebGL fluid visualizer into a right-localized, floating "liquid matter" blob entity with an orbiting satellite. Blended elements using smooth distance fields inside the shader. Implemented a deterministic track palette generator hashing track file paths to produce a unique, dynamic 4-color HSL gradient palette for each track, transitioning colors dynamically during seek, load, and playback.
 
 ---
 
@@ -251,15 +252,20 @@ interface VisualizerContainerProps {
 export const VisualizerContainer: React.FC<VisualizerContainerProps>
 ```
 
+#### Deterministic Track Color Aura:
+To make each track visually unique, the frontend computes a deterministic HSL color palette based on a hash of the track's absolute `filePath`:
+*   `baseHue`: `hash % 360`
+*   `secondaryHue`: `(baseHue + 40 + hash % 80) % 360`
+*   `accentHue`: `(baseHue + 120 + hash % 120) % 360`
+These hues are converted to HSL tuples: `bg` (dark/ambient, $L=4\%$), `accent` (neon highlight, $L=55\%$), `surface` (mid-tone core, $L=45\%$), and `muted` (warm shadow, $L=40\%$) before being passed to WebGL.
+
 #### Phase Integration for Smoothness:
 To prevent jerkiness and sudden twitches, the rendering pipeline integrates frequency energy into phase variables rather than mapping frequencies directly to vertex or coordinate displacements:
 $$\text{phase}_i(t) = \text{phase}_i(t-\Delta t) + \Delta t \cdot \left(c_{\text{base}} + c_{\text{scale}} \cdot \text{energy}_i\right)$$
 This accumulates momentum. When beats hit, the fluid accelerates; when beats fade, the fluid slows down to a gentle drift, ensuring continuous and smooth forward movement without snapping backward.
 
-#### Uniform Mapping & Lerp:
-*   `u_phaseBass`: accumulated bass phase ($c_{\text{base}} = 0.35, c_{\text{scale}} = 3.5$, average of spectrum bins $0 - 6$). Drives core warping and the first color center.
-*   `u_phaseMid`: accumulated mid phase ($c_{\text{base}} = 0.25, c_{\text{scale}} = 2.5$, average of spectrum bins $7 - 24$). Drives secondary warping and the second color center.
-*   `u_phaseHigh`: accumulated high phase ($c_{\text{base}} = 0.18, c_{\text{scale}} = 1.8$, average of spectrum bins $25 - 63$). Drives fine detail turbulence and the third color center.
-*   Color Uniforms: `u_colorBg`, `u_colorAccent`, `u_colorSurface`, `u_colorMuted` (lerped at $\lambda = 0.04$ towards target palette vectors).
-*   Palette Transitions: Maps track mood to target palettes (`energetic` $\rightarrow$ `saas`, `dark` $\rightarrow$ `fintech`, `chill` $\rightarrow$ `eco`, `happy` $\rightarrow$ `neutrals`, `calm`/`peaceful` $\rightarrow$ `trust`). Falls back to active UI theme colors when no track is active/playing.
-*   GPU-acceleration: Renders full-screen domain-warped metaballs utilizing 3 iterations of hardware-accelerated trigonometric sine-cosine space warping inside the GLSL fragment shader, generating organic liquid paint mixing. Capped at 30 FPS and downsampled 3x for maximum system efficiency and near-zero GPU load.
+#### Localized Fluid Matter and Satellite Orbit:
+The fragment shader draws a localized liquid blob entity on the right half of the canvas:
+*   Main Blob: Centered at `vec2(aspect * 0.4, -0.05)`, warped dynamically by trigonometric space warping using phase variables.
+*   Satellite Blob: Orbits the main body dynamically via `orbit = vec2(0.45 * sin(u_time * 0.5 + u_phaseMid * 0.3), 0.35 * cos(u_time * 0.4 + u_phaseHigh * 0.2))`.
+*   Blend & Glow: Both fields are joined via a smooth union ($glow + satelliteGlow$), blending them organically when they touch. Swirling internal patterns mix the generated track colors to form rich multi-color gradients inside the matter. Capped at 30 FPS and downsampled 3x for maximum system efficiency and near-zero GPU load.
