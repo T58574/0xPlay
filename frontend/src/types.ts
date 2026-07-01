@@ -1,0 +1,33 @@
+export interface TrackInfo {
+    filePath: string;
+    durationSec: number;
+    bpm: number;
+    keySignature: string;
+    waveform: number[];
+    artist?: string;
+    genre?: string;
+}
+
+export interface SoundCloudResult {
+    title: string;
+    uploader: string;
+    url: string;
+    duration: number;
+}
+
+export interface PlaylistInfo {
+    name: string;
+    trackPaths: string[];
+}
+
+export interface ThemeConfig {
+    accent: string;
+    dark: string;
+    hover: string;
+    bg: string;
+    surface: string;
+    text: string;
+    mutedText: string;
+    border: string;
+    accentText: string;
+}
