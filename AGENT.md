@@ -204,3 +204,4 @@ if (results.length > 0) {
 
 ## 6. Project Updates & Changelog
 * **2026-06-19**: Updated `README.md` with beautiful Russian documentation structure, including system architecture mermaid diagram fixes (closed code block syntax), automix LaTeX equations formatting, key features detail, tech stack components, instructions for development/build, and GitHub Actions CI/CD pipeline documentation.
+* **2026-07-01**: Removed DJ decks and Search SoundCloud tabs. Replaced the global left sidebar with a top header layout. Moved the settings button to the top-right of the header, and removed the "0xPlay" title. Embedded the playlist and filter categories inside a sidebar in the library view.

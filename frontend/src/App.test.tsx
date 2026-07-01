@@ -40,11 +40,11 @@ describe('App Component', () => {
         vi.clearAllMocks();
     });
 
-    it('renders the navigation menu buttons', async () => {
+    it('renders the header control buttons', async () => {
         render(<App />);
 
-        expect(screen.getByRole('button', { name: /Library/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /DJ Decks/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Open Folder/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Scan Folder/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Settings/i })).toBeInTheDocument();
     });
 
@@ -56,18 +56,6 @@ describe('App Component', () => {
         });
 
         expect(screen.getByText('Home Library')).toBeInTheDocument();
-    });
-
-    it('navigates to DJ Decks view and shows Deck A and Deck B', async () => {
-        render(<App />);
-
-        const djDecksButton = screen.getByRole('button', { name: /DJ Decks/i });
-        fireEvent.click(djDecksButton);
-
-        await waitFor(() => {
-            expect(screen.getByText('DECK A')).toBeInTheDocument();
-            expect(screen.getByText('DECK B')).toBeInTheDocument();
-        });
     });
 
     it('navigates to Settings view and shows App Settings', async () => {

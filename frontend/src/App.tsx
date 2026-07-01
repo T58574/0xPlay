@@ -930,156 +930,22 @@ function App() {
 
     return (
         <div className="container">
-            <div className="app-main-layout">
-                <aside className="sidebar">
-                    <div className="brand-logo">
-                        <span className="logo-spark"><BoltIcon /></span>
-                        <h2>0XPLAY</h2>
-                    </div>
+            <header className="app-header">
+                <div className="header-left">
+                    <span className="logo-spark"><BoltIcon /></span>
+                    <button className="header-btn" onClick={OpenMusicDir}>
+                        <FolderIcon />
+                        <span>Open Folder</span>
+                    </button>
+                    <button className="header-btn" onClick={loadLibrary}>
+                        <ResetIcon />
+                        <span>Scan Folder</span>
+                    </button>
+                </div>
 
-                    <nav className="nav-menu">
-                        <button 
-                            className={`nav-item ${activeTab === 'library' && selectedPlaylist === null ? 'active' : ''}`}
-                            onClick={() => {
-                                setSelectedPlaylist(null);
-                                setActiveTab('library');
-                            }}
-                        >
-                            <LibraryIcon />
-                            <span>Library</span>
-                        </button>
-                        <button 
-                            className={`nav-item ${activeTab === 'decks' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('decks')}
-                        >
-                            <DecksIcon />
-                            <span>DJ Decks</span>
-                        </button>
-                        <button 
-                            className={`nav-item ${activeTab === 'search' ? 'active' : ''}`}
-                            onClick={() => {
-                                setSelectedPlaylist(null);
-                                setActiveTab('search');
-                            }}
-                        >
-                            <SearchIcon />
-                            <span>Search SoundCloud</span>
-                        </button>
-                        <button 
-                            className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('settings')}
-                        >
-                            <SettingsIcon />
-                            <span>Settings</span>
-                        </button>
-                    </nav>
-
-                    <div className="playlists-sidebar-section">
-                        <div className="playlists-sidebar-header">
-                            <span className="theme-section-title">PLAYLISTS</span>
-                            <button 
-                                className="create-playlist-sidebar-btn" 
-                                onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
-                                title="Create Playlist"
-                            >
-                                <PlusIcon />
-                            </button>
-                        </div>
-                        {isCreatingPlaylist && (
-                            <div className="sidebar-playlist-input-container">
-                                <input
-                                    type="text"
-                                    placeholder="New playlist name..."
-                                    value={newPlaylistName}
-                                    onChange={(e) => setNewPlaylistName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleCreatePlaylistSubmit();
-                                        if (e.key === 'Escape') setIsCreatingPlaylist(false);
-                                    }}
-                                    className="sidebar-playlist-input"
-                                    autoFocus
-                                />
-                                <button className="sidebar-playlist-submit-btn" onClick={handleCreatePlaylistSubmit}>✓</button>
-                            </div>
-                        )}
-                        <div className="sidebar-playlists-list">
-                            {playlists.map((pl) => {
-                                const isActive = selectedPlaylist === pl.name && activeTab === 'library';
-                                return (
-                                    <div key={pl.name} className={`sidebar-playlist-row ${isActive ? 'active' : ''}`}>
-                                        <button 
-                                            className="sidebar-playlist-item-btn"
-                                            onClick={() => {
-                                                setSelectedPlaylist(pl.name);
-                                                setActiveTab('library');
-                                            }}
-                                        >
-                                            <MusicIconSmall />
-                                            <span className="sidebar-playlist-name">{pl.name}</span>
-                                        </button>
-                                        <button 
-                                            className="sidebar-delete-playlist-btn"
-                                            onClick={() => handleDeletePlaylist(pl.name)}
-                                            title="Delete Playlist"
-                                        >
-                                            <TrashIcon />
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="categories-sidebar-section">
-                        <div className="categories-sidebar-header">
-                            <span className="theme-section-title">ARTISTS</span>
-                            {selectedArtist && (
-                                <button className="clear-filter-btn" onClick={() => setSelectedArtist(null)}>Clear</button>
-                            )}
-                        </div>
-                        <div className="sidebar-categories-list">
-                            {availableArtists.map(artist => (
-                                <button
-                                    key={artist}
-                                    className={`sidebar-category-item-btn ${selectedArtist === artist ? 'active' : ''}`}
-                                    onClick={() => {
-                                        setSelectedArtist(selectedArtist === artist ? null : artist);
-                                        setSelectedPlaylist(null);
-                                        setActiveTab('library');
-                                    }}
-                                >
-                                    <span>{artist}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="categories-sidebar-section">
-                        <div className="categories-sidebar-header">
-                            <span className="theme-section-title">GENRES</span>
-                            {selectedGenre && (
-                                <button className="clear-filter-btn" onClick={() => setSelectedGenre(null)}>Clear</button>
-                            )}
-                        </div>
-                        <div className="sidebar-categories-list">
-                            {availableGenres.map(genre => (
-                                <button
-                                    key={genre}
-                                    className={`sidebar-category-item-btn ${selectedGenre === genre ? 'active' : ''}`}
-                                    onClick={() => {
-                                        setSelectedGenre(selectedGenre === genre ? null : genre);
-                                        setSelectedPlaylist(null);
-                                        setActiveTab('library');
-                                    }}
-                                >
-                                    <span>{genre}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="theme-selector-section">
-                        <span className="theme-section-title">THEME PALETTE</span>
+                <div className="header-center">
+                    <div className="header-theme-selector">
+                        <span className="header-theme-title">THEME PALETTE</span>
                         <div className="theme-buttons-grid">
                             {Object.keys(themes).map((tKey) => {
                                 const th = themes[tKey as keyof typeof themes];
@@ -1095,184 +961,301 @@ function App() {
                             })}
                         </div>
                     </div>
+                </div>
 
-                    <div className="sidebar-footer">
-                        <button className="sidebar-btn" onClick={OpenMusicDir}>
-                            <FolderIcon />
-                            <span>Open Folder</span>
-                        </button>
-                        <button className="sidebar-btn" onClick={loadLibrary}>
-                            <ResetIcon />
-                            <span>Scan Folder</span>
-                        </button>
-                    </div>
-                </aside>
+                <div className="header-right">
+                    <button 
+                        className={`settings-toggle-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                        onClick={() => {
+                            if (activeTab === 'settings') {
+                                setActiveTab('library');
+                            } else {
+                                setSelectedPlaylist(null);
+                                setActiveTab('settings');
+                            }
+                        }}
+                        aria-label="Settings"
+                        title="Settings"
+                    >
+                        <SettingsIcon />
+                    </button>
+                </div>
+            </header>
 
+            <div className="app-main-layout">
                 <main className="content-panel">
                     {activeTab === 'library' && (
-                        <div className="library-view">
-                            <header className="library-hero">
-                                <div className="hero-cover">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="hero-cover-svg">
-                                        <path d="M9 18V5l12-2v13" />
-                                        <circle cx="6" cy="18" r="3" />
-                                        <circle cx="18" cy="16" r="3" />
-                                    </svg>
-                                </div>
-                                <div className="hero-content">
-                                    <span className="hero-tag">{selectedPlaylist ? 'CUSTOM PLAYLIST' : 'LOCAL PLAYLIST'}</span>
-                                    <h1 className="hero-title">{selectedPlaylist || 'Home Library'}</h1>
-                                    <div className="hero-stats">
-                                        <span className="hero-author">0xPlayer</span>
-                                        <span className="hero-dot">•</span>
-                                        <span>{currentPlaylistTracks.length} tracks</span>
-                                        <span className="hero-dot">•</span>
-                                        <span>{totalDurationStr}</span>
+                        <div className="library-body-layout">
+                            <aside className="library-sidebar">
+                                <div className="playlists-sidebar-section">
+                                    <div className="playlists-sidebar-header">
+                                        <span className="theme-section-title">PLAYLISTS</span>
+                                        <button 
+                                            className="create-playlist-sidebar-btn" 
+                                            onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
+                                            title="Create Playlist"
+                                        >
+                                            <PlusIcon />
+                                        </button>
                                     </div>
-                                    <p className="hero-path">{selectedPlaylist ? `Custom Playlist: ${selectedPlaylist}` : musicDir}</p>
-                                </div>
-                            </header>
-
-                            <div className="library-controls-bar">
-                                <button className="hero-play-button" onClick={handleHeroPlayClick}>
-                                    {playing[activeSlot] && tracks[activeSlot] ? <PauseIcon /> : <PlayIcon />}
-                                </button>
-                                
-                                <div className="search-bar-container">
-                                    <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
-                                        <circle cx="11" cy="11" r="8" />
-                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                                    </svg>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search in library..." 
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="search-input"
-                                    />
-                                    {searchQuery && (
-                                        <button className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
+                                    {isCreatingPlaylist && (
+                                        <div className="sidebar-playlist-input-container">
+                                            <input
+                                                type="text"
+                                                placeholder="New playlist name..."
+                                                value={newPlaylistName}
+                                                onChange={(e) => setNewPlaylistName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleCreatePlaylistSubmit();
+                                                    if (e.key === 'Escape') setIsCreatingPlaylist(false);
+                                                }}
+                                                className="sidebar-playlist-input"
+                                                autoFocus
+                                            />
+                                            <button className="sidebar-playlist-submit-btn" onClick={handleCreatePlaylistSubmit}>✓</button>
+                                        </div>
                                     )}
-                                </div>
-                            </div>
-
-                            {filteredTracks.length > 0 ? (
-                                <div className="tracks-list-container">
-                                    <table className="tracks-table">
-                                        <thead>
-                                            <tr>
-                                                <th style={{ width: '50px' }}>#</th>
-                                                <th>TITLE</th>
-                                                <th style={{ width: '120px' }}>BPM</th>
-                                                <th style={{ width: '120px' }}>KEY</th>
-                                                <th style={{ width: '100px' }}>DURATION</th>
-                                                <th style={{ width: '80px', textAlign: 'center' }}></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredTracks.map((track, idx) => {
-                                                const filename = getFilename(track.filePath);
-                                                const originalIndex = libraryTracks.findIndex(t => t.filePath === track.filePath);
-                                                const isCurrent = currentTrackIndex === originalIndex;
-                                                return (
-                                                    <tr 
-                                                        key={track.filePath} 
-                                                        className={`track-row ${isCurrent ? 'current' : ''}`}
-                                                        onClick={() => handlePlayLibraryTrack(originalIndex)}
+                                    <div className="sidebar-playlists-list">
+                                        {playlists.map((pl) => {
+                                            const isActive = selectedPlaylist === pl.name && activeTab === 'library';
+                                            return (
+                                                <div key={pl.name} className={`sidebar-playlist-row ${isActive ? 'active' : ''}`}>
+                                                    <button 
+                                                        className="sidebar-playlist-item-btn"
+                                                        onClick={() => {
+                                                            setSelectedPlaylist(pl.name);
+                                                            setActiveTab('library');
+                                                        }}
                                                     >
-                                                        <td>
-                                                            {isCurrent && playing[activeSlot] ? (
-                                                                <span className="row-play-btn glowing-green"><RowPauseIcon /></span>
-                                                            ) : (
-                                                                <span className="row-play-btn"><RowPlayIcon /></span>
-                                                            )}
-                                                        </td>
-                                                        <td className="track-title-cell">
-                                                            <div className="track-title-main">{filename}</div>
-                                                            {(track.artist || track.genre) && (
-                                                                <div className="track-artist-sub">
-                                                                    {track.artist || 'Unknown Artist'} • {track.genre || 'Unknown Genre'}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td>{track.bpm.toFixed(1)}</td>
-                                                        <td className="glowing-key">{track.keySignature}</td>
-                                                        <td>{formatTime(track.durationSec)}</td>
-                                                        <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
-                                                            <div className="action-buttons-group">
-                                                                <button 
-                                                                    className="track-action-btn add-btn"
-                                                                    onClick={() => setActivePlaylistMenuTrack(activePlaylistMenuTrack === track.filePath ? null : track.filePath)}
-                                                                    title="Add to Playlist"
-                                                                >
-                                                                    <PlusIcon />
-                                                                </button>
-                                                                {selectedPlaylist && (
-                                                                    <button 
-                                                                        className="track-action-btn remove-btn"
-                                                                        onClick={() => handleRemoveTrackFromPlaylist(selectedPlaylist, track.filePath)}
-                                                                        title="Remove from Playlist"
-                                                                    >
-                                                                        ✕
-                                                                    </button>
-                                                                )}
-                                                                {activePlaylistMenuTrack === track.filePath && (
-                                                                    <>
-                                                                        <div className="playlist-dropdown-backdrop" onClick={() => setActivePlaylistMenuTrack(null)} />
-                                                                        <div className="playlist-dropdown-menu">
-                                                                            <span className="dropdown-menu-title">Add to Playlist</span>
-                                                                            {playlists.length === 0 ? (
-                                                                                <span className="dropdown-no-playlists">No playlists created</span>
-                                                                            ) : (
-                                                                                playlists.map((pl) => {
-                                                                                    const alreadyHas = pl.trackPaths?.includes(track.filePath);
-                                                                                    return (
-                                                                                        <button 
-                                                                                            key={pl.name}
-                                                                                            className={`dropdown-menu-item ${alreadyHas ? 'disabled' : ''}`}
-                                                                                            onClick={() => {
-                                                                                                if (!alreadyHas) {
-                                                                                                    handleAddTrackToPlaylist(pl.name, track.filePath);
-                                                                                                }
-                                                                                            }}
-                                                                                            disabled={alreadyHas}
-                                                                                        >
-                                                                                            <span>{pl.name}</span>
-                                                                                            {alreadyHas && <span className="already-has-check">✓</span>}
-                                                                                        </button>
-                                                                                    );
-                                                                                })
-                                                                            )}
-                                                                        </div>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                        <MusicIconSmall />
+                                                        <span className="sidebar-playlist-name">{pl.name}</span>
+                                                    </button>
+                                                    <button 
+                                                        className="sidebar-delete-playlist-btn"
+                                                        onClick={() => handleDeletePlaylist(pl.name)}
+                                                        title="Delete Playlist"
+                                                    >
+                                                        <TrashIcon />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="empty-library">
-                                    <div className="empty-card">
-                                        <MusicIcon />
-                                        <h3>Your library is empty</h3>
-                                        <p>Drop audio files into `.0xplayer` directory under your home folder.</p>
-                                        <div className="empty-actions">
-                                            <button className="btn-primary" onClick={OpenMusicDir}>
-                                                <FolderIcon />
-                                                <span>Open Directory</span>
+
+                                <div className="categories-sidebar-section">
+                                    <div className="categories-sidebar-header">
+                                        <span className="theme-section-title">ARTISTS</span>
+                                        {selectedArtist && (
+                                            <button className="clear-filter-btn" onClick={() => setSelectedArtist(null)}>Clear</button>
+                                        )}
+                                    </div>
+                                    <div className="sidebar-categories-list">
+                                        {availableArtists.map(artist => (
+                                            <button
+                                                key={artist}
+                                                className={`sidebar-category-item-btn ${selectedArtist === artist ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setSelectedArtist(selectedArtist === artist ? null : artist);
+                                                    setSelectedPlaylist(null);
+                                                    setActiveTab('library');
+                                                }}
+                                            >
+                                                <span>{artist}</span>
                                             </button>
-                                            <button className="btn-secondary" onClick={() => handleSelectAndLoad(activeSlot)}>
-                                                <LoadIcon />
-                                                <span>Select File Directly</span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="categories-sidebar-section">
+                                    <div className="categories-sidebar-header">
+                                        <span className="theme-section-title">GENRES</span>
+                                        {selectedGenre && (
+                                            <button className="clear-filter-btn" onClick={() => setSelectedGenre(null)}>Clear</button>
+                                        )}
+                                    </div>
+                                    <div className="sidebar-categories-list">
+                                        {availableGenres.map(genre => (
+                                            <button
+                                                key={genre}
+                                                className={`sidebar-category-item-btn ${selectedGenre === genre ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setSelectedGenre(selectedGenre === genre ? null : genre);
+                                                    setSelectedPlaylist(null);
+                                                    setActiveTab('library');
+                                                }}
+                                            >
+                                                <span>{genre}</span>
                                             </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <div className="library-main-content">
+                                <header className="library-hero">
+                                    <div className="hero-cover">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="hero-cover-svg">
+                                            <path d="M9 18V5l12-2v13" />
+                                            <circle cx="6" cy="18" r="3" />
+                                            <circle cx="18" cy="16" r="3" />
+                                        </svg>
+                                    </div>
+                                    <div className="hero-content">
+                                        <span className="hero-tag">{selectedPlaylist ? 'CUSTOM PLAYLIST' : 'LOCAL PLAYLIST'}</span>
+                                        <h1 className="hero-title">{selectedPlaylist || 'Home Library'}</h1>
+                                        <div className="hero-stats">
+                                            <span className="hero-author">0xPlayer</span>
+                                            <span className="hero-dot">•</span>
+                                            <span>{currentPlaylistTracks.length} tracks</span>
+                                            <span className="hero-dot">•</span>
+                                            <span>{totalDurationStr}</span>
+                                        </div>
+                                        <p className="hero-path">{selectedPlaylist ? `Custom Playlist: ${selectedPlaylist}` : musicDir}</p>
+                                    </div>
+                                </header>
+
+                                <div className="library-controls-bar">
+                                    <button className="hero-play-button" onClick={handleHeroPlayClick}>
+                                        {playing[activeSlot] && tracks[activeSlot] ? <PauseIcon /> : <PlayIcon />}
+                                    </button>
+                                    
+                                    <div className="search-bar-container">
+                                        <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                        </svg>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search in library..." 
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="search-input"
+                                        />
+                                        {searchQuery && (
+                                            <button className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {filteredTracks.length > 0 ? (
+                                    <div className="tracks-list-container">
+                                        <table className="tracks-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: '50px' }}>#</th>
+                                                    <th>TITLE</th>
+                                                    <th style={{ width: '120px' }}>BPM</th>
+                                                    <th style={{ width: '120px' }}>KEY</th>
+                                                    <th style={{ width: '100px' }}>DURATION</th>
+                                                    <th style={{ width: '80px', textAlign: 'center' }}></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredTracks.map((track, idx) => {
+                                                    const filename = getFilename(track.filePath);
+                                                    const originalIndex = libraryTracks.findIndex(t => t.filePath === track.filePath);
+                                                    const isCurrent = currentTrackIndex === originalIndex;
+                                                    return (
+                                                        <tr 
+                                                            key={track.filePath} 
+                                                            className={`track-row ${isCurrent ? 'current' : ''}`}
+                                                            onClick={() => handlePlayLibraryTrack(originalIndex)}
+                                                        >
+                                                            <td>
+                                                                {isCurrent && playing[activeSlot] ? (
+                                                                    <span className="row-play-btn glowing-green"><RowPauseIcon /></span>
+                                                                ) : (
+                                                                    <span className="row-play-btn"><RowPlayIcon /></span>
+                                                                )}
+                                                            </td>
+                                                            <td className="track-title-cell">
+                                                                <div className="track-title-main">{filename}</div>
+                                                                {(track.artist || track.genre) && (
+                                                                    <div className="track-artist-sub">
+                                                                        {track.artist || 'Unknown Artist'} • {track.genre || 'Unknown Genre'}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td>{track.bpm.toFixed(1)}</td>
+                                                            <td className="glowing-key">{track.keySignature}</td>
+                                                            <td>{formatTime(track.durationSec)}</td>
+                                                            <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
+                                                                <div className="action-buttons-group">
+                                                                    <button 
+                                                                        className="track-action-btn add-btn"
+                                                                        onClick={() => setActivePlaylistMenuTrack(activePlaylistMenuTrack === track.filePath ? null : track.filePath)}
+                                                                        title="Add to Playlist"
+                                                                    >
+                                                                        <PlusIcon />
+                                                                    </button>
+                                                                    {selectedPlaylist && (
+                                                                        <button 
+                                                                            className="track-action-btn remove-btn"
+                                                                            onClick={() => handleRemoveTrackFromPlaylist(selectedPlaylist, track.filePath)}
+                                                                            title="Remove from Playlist"
+                                                                        >
+                                                                            ✕
+                                                                        </button>
+                                                                    )}
+                                                                    {activePlaylistMenuTrack === track.filePath && (
+                                                                        <>
+                                                                            <div className="playlist-dropdown-backdrop" onClick={() => setActivePlaylistMenuTrack(null)} />
+                                                                            <div className="playlist-dropdown-menu">
+                                                                                <span className="dropdown-menu-title">Add to Playlist</span>
+                                                                                {playlists.length === 0 ? (
+                                                                                    <span className="dropdown-no-playlists">No playlists created</span>
+                                                                                ) : (
+                                                                                    playlists.map((pl) => {
+                                                                                        const alreadyHas = pl.trackPaths?.includes(track.filePath);
+                                                                                        return (
+                                                                                            <button 
+                                                                                                key={pl.name}
+                                                                                                className={`dropdown-menu-item ${alreadyHas ? 'disabled' : ''}`}
+                                                                                                onClick={() => {
+                                                                                                    if (!alreadyHas) {
+                                                                                                        handleAddTrackToPlaylist(pl.name, track.filePath);
+                                                                                                    }
+                                                                                                }}
+                                                                                                disabled={alreadyHas}
+                                                                                            >
+                                                                                                <span>{pl.name}</span>
+                                                                                                {alreadyHas && <span className="already-has-check">✓</span>}
+                                                                                            </button>
+                                                                                        );
+                                                                                    })
+                                                                                )}
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="empty-library">
+                                        <div className="empty-card">
+                                            <MusicIcon />
+                                            <h3>Your library is empty</h3>
+                                            <p>Drop audio files into `.0xplayer` directory under your home folder.</p>
+                                            <div className="empty-actions">
+                                                <button className="btn-primary" onClick={OpenMusicDir}>
+                                                    <FolderIcon />
+                                                    <span>Open Directory</span>
+                                                </button>
+                                                <button className="btn-secondary" onClick={() => handleSelectAndLoad(activeSlot)}>
+                                                    <LoadIcon />
+                                                    <span>Select File Directly</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
                     {activeTab === 'decks' && (
