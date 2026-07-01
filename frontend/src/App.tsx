@@ -222,7 +222,7 @@ function App() {
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState<boolean>(false);
     const [newPlaylistName, setNewPlaylistName] = useState<string>('');
     const [activePlaylistMenuTrack, setActivePlaylistMenuTrack] = useState<string | null>(null);
-    const [currentTheme, setCurrentTheme] = useState<string>('emerald');
+    const [currentTheme, setCurrentTheme] = useState<string>('saas');
     const [soundcloudQuery, setSoundcloudQuery] = useState<string>('');
     const [soundcloudResults, setSoundcloudResults] = useState<SoundCloudResult[]>([]);
     const [isDownloading, setIsDownloading] = useState<boolean>(false);
@@ -232,23 +232,78 @@ function App() {
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
     const themes = {
-        emerald: { accent: '#22C55E', dark: '#15803d', hover: '#2cd46e', bgStart: '#1E1B4B', bgEnd: '#080811' },
-        purple: { accent: '#A855F7', dark: '#7E22CE', hover: '#b86bff', bgStart: '#2E1065', bgEnd: '#090514' },
-        amber: { accent: '#F59E0B', dark: '#B45309', hover: '#fbbf24', bgStart: '#451A03', bgEnd: '#0C0401' },
-        blue: { accent: '#3B82F6', dark: '#1D4ED8', hover: '#60a5fa', bgStart: '#1E3A8A', bgEnd: '#030712' },
-        rose: { accent: '#F43F5E', dark: '#BE123C', hover: '#fb7185', bgStart: '#4C0519', bgEnd: '#0A0002' }
+        saas: {
+            accent: '#00FFC2',
+            dark: '#00B388',
+            hover: '#33FFCE',
+            bg: '#0B0D10',
+            surface: '#151A21',
+            text: '#E9EEF5',
+            mutedText: '#8A99AD',
+            border: '#273140',
+            accentText: '#0B0D10'
+        },
+        neutrals: {
+            accent: '#635BFF',
+            dark: '#4E45E0',
+            hover: '#827BFF',
+            bg: '#F0EEE9',
+            surface: '#FFFFFF',
+            text: '#141414',
+            mutedText: '#626875',
+            border: '#D2CEC4',
+            accentText: '#FFFFFF'
+        },
+        fintech: {
+            accent: '#00E5E5',
+            dark: '#00B2B2',
+            hover: '#33EBEB',
+            bg: '#07070A',
+            surface: '#11101E',
+            text: '#F3F0FF',
+            mutedText: '#8884A4',
+            border: '#2C2B47',
+            accentText: '#07070A'
+        },
+        trust: {
+            accent: '#1A73E8',
+            dark: '#1152A3',
+            hover: '#3B8AF3',
+            bg: '#F8FAFC',
+            surface: '#FFFFFF',
+            text: '#1E293B',
+            mutedText: '#64748B',
+            border: '#E2E8F0',
+            accentText: '#FFFFFF'
+        },
+        eco: {
+            accent: '#316263',
+            dark: '#224445',
+            hover: '#417F80',
+            bg: '#E7D8C6',
+            surface: '#FAF6F0',
+            text: '#101417',
+            mutedText: '#6A5F50',
+            border: '#D6C8B7',
+            accentText: '#FFFFFF'
+        }
     };
 
     useEffect(() => {
-        const theme = themes[currentTheme as keyof typeof themes] || themes.emerald;
+        const theme = themes[currentTheme as keyof typeof themes] || themes.saas;
         const root = document.documentElement;
         root.style.setProperty('--accent-color', theme.accent);
         root.style.setProperty('--accent-color-dark', theme.dark);
         root.style.setProperty('--accent-color-hover', theme.hover);
-        root.style.setProperty('--bg-start', theme.bgStart);
-        root.style.setProperty('--bg-end', theme.bgEnd);
-        root.style.setProperty('--accent-bg-glow', theme.accent + '10');
-        root.style.setProperty('--accent-row-active', theme.accent + '0b');
+        root.style.setProperty('--accent-text-color', theme.accentText);
+        root.style.setProperty('--bg-color', theme.bg);
+        root.style.setProperty('--surface-color', theme.surface);
+        root.style.setProperty('--text-color', theme.text);
+        root.style.setProperty('--muted-text-color', theme.mutedText);
+        root.style.setProperty('--border-color', theme.border);
+        root.style.setProperty('--accent-bg-glow', theme.accent + '1c');
+        root.style.setProperty('--accent-row-active', theme.accent + '0f');
+        root.style.setProperty('--hover-color', theme.text + '0f');
     }, [currentTheme]);
 
     const [tracks, setTracks] = useState<[TrackInfo | null, TrackInfo | null]>([null, null]);
@@ -822,7 +877,7 @@ function App() {
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        const theme = themes[currentTheme as keyof typeof themes] || themes.emerald;
+        const theme = themes[currentTheme as keyof typeof themes] || themes.saas;
         const barGradient = ctx.createLinearGradient(0, h, 0, 0);
         barGradient.addColorStop(0, theme.accent + '15');
         barGradient.addColorStop(0.4, theme.accent + 'b3');
@@ -889,8 +944,8 @@ function App() {
 
         const playPct = dur > 0 ? pos / dur : 0;
         const barWidth = w / peaks.length;
-        const theme = themes[currentTheme as keyof typeof themes] || themes.emerald;
-        const accentColor = theme.accent || '#22C55E';
+        const theme = themes[currentTheme as keyof typeof themes] || themes.saas;
+        const accentColor = theme.accent;
 
         for (let i = 0; i < peaks.length; i++) {
             const pct = i / peaks.length;
@@ -1512,15 +1567,15 @@ function App() {
                                                     <span className="theme-card-title">{tKey}</span>
                                                     <div className="theme-color-preview">
                                                         <span className="color-preview-dot" style={{ backgroundColor: th.accent }}></span>
-                                                        <span className="color-preview-dot" style={{ backgroundColor: th.bgStart }}></span>
+                                                        <span className="color-preview-dot" style={{ backgroundColor: th.bg }}></span>
                                                     </div>
                                                 </div>
                                                 <span className="theme-card-desc">
-                                                    {tKey === 'emerald' ? 'Spotify green energy' : 
-                                                     tKey === 'purple' ? 'Cosmic nebula space vibe' : 
-                                                     tKey === 'amber' ? 'Cyberpunk neon sunset' : 
-                                                     tKey === 'blue' ? 'Deep ocean tranquility' : 
-                                                     'Velvet rose dynamic power'}
+                                                    {tKey === 'saas' ? 'Modern SaaS & Dark Dashboard' : 
+                                                     tKey === 'neutrals' ? 'Elevated Neutrals (Light Mode)' : 
+                                                     tKey === 'fintech' ? 'Fintech & AI Innovation' : 
+                                                     tKey === 'trust' ? 'Classic Trust (Light Mode)' : 
+                                                     'Eco-Digital & Wellness'}
                                                 </span>
                                             </div>
                                         );
