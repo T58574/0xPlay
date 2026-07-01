@@ -161,8 +161,9 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
         currentColors.muted = [...initialPalette.muted];
 
         const resizeCanvas = () => {
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
+            const downsample = 3;
+            const width = Math.max(32, Math.floor(canvas.clientWidth / downsample));
+            const height = Math.max(32, Math.floor(canvas.clientHeight / downsample));
             if (canvas.width !== width || canvas.height !== height) {
                 canvas.width = width;
                 canvas.height = height;
@@ -173,7 +174,20 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        const fpsLimit = 30;
+        const interval = 1000 / fpsLimit;
+        let lastDrawTime = performance.now();
+
         const render = (now: number) => {
+            animationFrameId = requestAnimationFrame(render);
+
+            const elapsed = now - lastDrawTime;
+            if (elapsed < interval) {
+                return;
+            }
+
+            lastDrawTime = now - (elapsed % interval);
+
             const dt = (now - lastTime) / 1000;
             lastTime = now;
             totalTime += dt;
@@ -232,8 +246,6 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
             gl.uniform3fv(uniforms.u_colorMuted, currentColors.muted);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-            animationFrameId = requestAnimationFrame(render);
         };
 
         animationFrameId = requestAnimationFrame(render);
