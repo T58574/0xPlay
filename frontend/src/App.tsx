@@ -23,7 +23,7 @@ import {
     DeletePlaylist,
     AddTrackToPlaylist,
     RemoveTrackFromPlaylist
-} from "../wailsjs/go/main/App";
+} from "../wailsjs/go/backend/App";
 
 import { TrackInfo, PlaylistInfo } from './types';
 import { AppHeader } from './components/AppHeader';

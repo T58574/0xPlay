@@ -8,7 +8,7 @@ vi.mock('../wailsjs/runtime/runtime', () => ({
     EventsEmit: vi.fn(),
 }));
 
-vi.mock('../wailsjs/go/main/App', () => ({
+vi.mock('../wailsjs/go/backend/App', () => ({
     LoadTrack: vi.fn(),
     Play: vi.fn(),
     Pause: vi.fn(),
