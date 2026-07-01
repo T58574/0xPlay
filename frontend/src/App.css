@@ -178,7 +178,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background: #080811;
+    background: transparent;
 }
 
 .brand-logo {

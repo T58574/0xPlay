@@ -50,7 +50,13 @@ function App() {
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState<boolean>(false);
     const [newPlaylistName, setNewPlaylistName] = useState<string>('');
     const [activePlaylistMenuTrack, setActivePlaylistMenuTrack] = useState<string | null>(null);
-    const [currentTheme, setCurrentTheme] = useState<string>('saas');
+    const [currentTheme, setCurrentTheme] = useState<string>(() => {
+        try {
+            return (typeof window !== 'undefined' && window.localStorage && localStorage.getItem('soundplayer_theme')) || 'saas';
+        } catch {
+            return 'saas';
+        }
+    });
     const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
@@ -127,6 +133,13 @@ function App() {
         root.style.setProperty('--accent-bg-glow', theme.accent + '1c');
         root.style.setProperty('--accent-row-active', theme.accent + '0f');
         root.style.setProperty('--hover-color', theme.text + '0f');
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem('soundplayer_theme', currentTheme);
+            }
+        } catch {
+            // Ignore
+        }
     }, [currentTheme]);
 
     const [tracks, setTracks] = useState<[TrackInfo | null, TrackInfo | null]>([null, null]);
@@ -772,9 +785,6 @@ function App() {
                 setActiveTab={setActiveTab}
                 handleSelectDirectory={OpenMusicDir}
                 handleScan={loadLibrary}
-                themes={themes}
-                currentTheme={currentTheme}
-                setCurrentTheme={setCurrentTheme}
             />
 
             <div className="app-main-layout">

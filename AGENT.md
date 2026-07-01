@@ -208,6 +208,7 @@ if (results.length > 0) {
 * **2026-07-01 (2)**: Refactored application's theme colors to use five custom semantic UI themes (Modern SaaS, Elevated Neutrals, Fintech & AI Innovation, Classic Trust, Eco-Digital & Wellness) mapping Background, Surface, Text, Border, Accent/Primary, and dynamic Contrast controls.
 * **2026-07-01 (3)**: Refactored the monolithic frontend structure by decomposing `App.tsx` into a highly-modular component architecture under `src/components/` (`AppHeader`, `LibrarySidebar`, `LibraryHero`, `LibraryTable`, `DeckView`, `SettingsView`, `PlaybackBar`, and `Icons`) and shared TypeScript interfaces (`src/types.ts`). Passed state coordinations via clean React props mappings.
 * **2026-07-01 (4)**: Implemented a high-performance WebGL fluid wave visualizer under `src/features/visualizer/` (`VisualizerContainer.tsx`, `FluidWaveShader.ts`) inspired by Yandex Music's "My Wave" shader, mapping real-time frequency bands (Bass/Mid/High) to shader displacements and transitioning colors dynamically based on track mood. Added backend mood classification (`DetermineMood`) in `app.go`.
+* **2026-07-01 (5)**: Removed the theme selection panel from the AppHeader component (rendering it strictly in Settings). Added localStorage hook persistence to make the theme configuration persist across player restarts. Fixed the track page background rendering bug by applying background transparent bindings to `.library-main-content`.
 
 ---
 
