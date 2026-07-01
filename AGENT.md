@@ -244,10 +244,17 @@ interface VisualizerContainerProps {
 export const VisualizerContainer: React.FC<VisualizerContainerProps>
 ```
 
+#### Phase Integration for Smoothness:
+To prevent jerkiness and sudden twitches, the rendering pipeline integrates frequency energy into phase variables rather than mapping frequencies directly to vertex or coordinate displacements:
+$$\text{phase}_i(t) = \text{phase}_i(t-\Delta t) + \Delta t \cdot \left(c_{\text{base}} + c_{\text{scale}} \cdot \text{energy}_i\right)$$
+This accumulates momentum. When beats hit, the fluid accelerates; when beats fade, the fluid slows down to a gentle drift, ensuring continuous and smooth forward movement without snapping backward.
+
 #### Uniform Mapping & Lerp:
-*   `u_bass`: average of spectrum bins $0 - 6$ (controls scale and core vibration amplitude).
-*   `u_mid`: average of spectrum bins $7 - 24$ (controls edge turbulence/roughness).
-*   `u_high`: average of spectrum bins $25 - 63$ (controls turbulence speed and roughness).
-*   Color Uniforms: `u_colorBg`, `u_colorAccent`, `u_colorSurface`, `u_colorMuted` (lerped smoothly on every frame towards target palette color vectors).
+*   `u_phaseBass`: accumulated bass phase ($c_{\text{base}} = 0.35, c_{\text{scale}} = 3.5$, average of spectrum bins $0 - 6$). Drives core warping and the first color center.
+*   `u_phaseMid`: accumulated mid phase ($c_{\text{base}} = 0.25, c_{\text{scale}} = 2.5$, average of spectrum bins $7 - 24$). Drives secondary warping and the second color center.
+*   `u_phaseHigh`: accumulated high phase ($c_{\text{base}} = 0.18, c_{\text{scale}} = 1.8$, average of spectrum bins $25 - 63$). Drives fine detail turbulence and the third color center.
+*   Color Uniforms: `u_colorBg`, `u_colorAccent`, `u_colorSurface`, `u_colorMuted` (lerped at $\lambda = 0.04$ towards target palette vectors).
 *   Palette Transitions: Maps track mood to target palettes (`energetic` $\rightarrow$ `saas`, `dark` $\rightarrow$ `fintech`, `chill` $\rightarrow$ `eco`, `happy` $\rightarrow$ `neutrals`, `calm`/`peaceful` $\rightarrow$ `trust`). Falls back to active UI theme colors when no track is active/playing.
-*   GPU-acceleration: Renders a single quad with custom fragment shader utilizing 2D fractional Brownian motion (FBM) noise and domain warping to achieve liquid-like movement at 60 FPS.
+*   GPU-acceleration: Renders full-screen domain-warped metaballs utilizing 2-octave FBM space warping inside the GLSL fragment shader, generating organic liquid paint mixing at 60 FPS.
+
+* **2026-07-02**: Redesigned the WebGL fluid shader to use full-screen domain-warped metaballs for rich gradient paint aesthetics. Replaced direct frequency mapping with phase-accumulated integration to resolve animation twitching, establishing smooth rhythmic flow transitions. Increased shader canvas opacity to $0.55$.

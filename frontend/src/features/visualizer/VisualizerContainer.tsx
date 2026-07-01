@@ -124,9 +124,9 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
         const uniforms = {
             u_time: gl.getUniformLocation(program, 'u_time'),
             u_resolution: gl.getUniformLocation(program, 'u_resolution'),
-            u_bass: gl.getUniformLocation(program, 'u_bass'),
-            u_mid: gl.getUniformLocation(program, 'u_mid'),
-            u_high: gl.getUniformLocation(program, 'u_high'),
+            u_phaseBass: gl.getUniformLocation(program, 'u_phaseBass'),
+            u_phaseMid: gl.getUniformLocation(program, 'u_phaseMid'),
+            u_phaseHigh: gl.getUniformLocation(program, 'u_phaseHigh'),
             u_colorBg: gl.getUniformLocation(program, 'u_colorBg'),
             u_colorAccent: gl.getUniformLocation(program, 'u_colorAccent'),
             u_colorSurface: gl.getUniformLocation(program, 'u_colorSurface'),
@@ -136,6 +136,10 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
         let animationFrameId = 0;
         let lastTime = performance.now();
         let totalTime = 0;
+
+        let phaseBass = 0;
+        let phaseMid = 0;
+        let phaseHigh = 0;
 
         const smoothed = { bass: 0, mid: 0, high: 0 };
         const currentColors = {
@@ -174,6 +178,8 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
             lastTime = now;
             totalTime += dt;
 
+            const frameDt = Math.min(dt, 0.1);
+
             const spec = spectrumDataRef.current;
             let rawBass = 0;
             let rawMid = 0;
@@ -190,6 +196,10 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
             smoothed.bass = smoothed.bass * 0.88 + rawBass * 0.12;
             smoothed.mid = smoothed.mid * 0.88 + rawMid * 0.12;
             smoothed.high = smoothed.high * 0.88 + rawHigh * 0.12;
+
+            phaseBass += frameDt * (0.35 + smoothed.bass * 3.5);
+            phaseMid += frameDt * (0.25 + smoothed.mid * 2.5);
+            phaseHigh += frameDt * (0.18 + smoothed.high * 1.8);
 
             const currentActiveTrack = tracks[audioStateRef.current.activeSlot];
             const currentIsPlaying = audioStateRef.current.playing[audioStateRef.current.activeSlot];
@@ -213,9 +223,9 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
 
             gl.uniform1f(uniforms.u_time, totalTime);
             gl.uniform2f(uniforms.u_resolution, canvas.width, canvas.height);
-            gl.uniform1f(uniforms.u_bass, smoothed.bass);
-            gl.uniform1f(uniforms.u_mid, smoothed.mid);
-            gl.uniform1f(uniforms.u_high, smoothed.high);
+            gl.uniform1f(uniforms.u_phaseBass, phaseBass);
+            gl.uniform1f(uniforms.u_phaseMid, phaseMid);
+            gl.uniform1f(uniforms.u_phaseHigh, phaseHigh);
             gl.uniform3fv(uniforms.u_colorBg, currentColors.bg);
             gl.uniform3fv(uniforms.u_colorAccent, currentColors.accent);
             gl.uniform3fv(uniforms.u_colorSurface, currentColors.surface);
@@ -249,7 +259,7 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({
                 display: 'block',
                 pointerEvents: 'none',
                 zIndex: 0,
-                opacity: 0.35
+                opacity: 0.55
             }}
         />
     );
