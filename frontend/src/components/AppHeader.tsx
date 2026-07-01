@@ -2,8 +2,8 @@ import React from 'react';
 import { BoltIcon, FolderIcon, LoadIcon, SettingsIcon } from './Icons';
 
 interface AppHeaderProps {
-    activeTab: 'library' | 'decks' | 'settings' | 'search';
-    setActiveTab: (tab: 'library' | 'decks' | 'settings' | 'search') => void;
+    activeTab: 'library' | 'decks' | 'settings' | 'search' | 'musicians';
+    setActiveTab: (tab: 'library' | 'decks' | 'settings' | 'search' | 'musicians') => void;
     handleSelectDirectory: () => void;
     handleScan: () => void;
     searchQuery: string;
@@ -21,8 +21,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     return (
         <header className="app-header">
             <div className="header-left">
-                <button className="header-btn brand-btn" onClick={() => setActiveTab('library')}>
+                <button className="header-btn brand-btn" onClick={() => { setActiveTab('library'); }}>
                     <BoltIcon />
+                </button>
+                <button className={`header-btn ${activeTab === 'library' ? 'active' : ''}`} onClick={() => setActiveTab('library')}>
+                    <span>Library</span>
+                </button>
+                <button className={`header-btn ${activeTab === 'musicians' ? 'active' : ''}`} onClick={() => setActiveTab('musicians')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" />
+                    </svg>
+                    <span>Musicians</span>
                 </button>
                 <button className="header-btn" onClick={handleSelectDirectory}>
                     <FolderIcon />

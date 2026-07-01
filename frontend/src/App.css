@@ -2021,3 +2021,132 @@ body {
     font-size: 14px;
     color: #64748b;
 }
+
+/* Musicians View & Artists Grid */
+.musicians-view {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.musicians-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 40px 40px 16px 40px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.artists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+    padding: 40px;
+}
+
+.artist-card {
+    background: color-mix(in srgb, var(--surface-color) 45%, transparent);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 16px;
+    backdrop-filter: blur(15px);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+.artist-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    border-color: var(--accent-color);
+    box-shadow: 0 12px 30px var(--accent-bg-glow);
+    background: color-mix(in srgb, var(--surface-color) 65%, transparent);
+}
+
+.artist-avatar-container {
+    width: 100%;
+    aspect-ratio: 1;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.artist-avatar-container svg {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s ease;
+}
+
+.artist-card:hover .artist-avatar-container svg {
+    transform: scale(1.05);
+}
+
+.artist-play-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: var(--accent-color);
+    color: var(--accent-text-color);
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.artist-card:hover .artist-play-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.artist-play-btn:hover {
+    background: var(--accent-color-hover);
+    transform: scale(1.1) !important;
+}
+
+.artist-play-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.artist-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.artist-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.artist-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+}
+
+.header-btn.active {
+    color: var(--accent-color) !important;
+    background: var(--accent-bg-glow) !important;
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 10px var(--accent-bg-glow);
+}

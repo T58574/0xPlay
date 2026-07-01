@@ -34,9 +34,10 @@ import { DeckView } from './components/DeckView';
 import { SettingsView } from './components/SettingsView';
 import { PlaybackBar } from './components/PlaybackBar';
 import { VisualizerContainer } from './features/visualizer/VisualizerContainer';
+import { MusiciansView } from './components/MusiciansView';
 
 function App() {
-    const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings' | 'search'>('library');
+    const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings' | 'search' | 'musicians'>('library');
     const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(8.0);
     const [musicDir, setMusicDir] = useState<string>('');
     const [libraryTracks, setLibraryTracks] = useState<TrackInfo[]>([]);
@@ -815,6 +816,7 @@ function App() {
                             <div className="library-main-content">
                                 <LibraryHero
                                     selectedPlaylist={selectedPlaylist}
+                                    selectedArtist={selectedArtist}
                                     currentPlaylistTracks={currentPlaylistTracks}
                                     totalDurationStr={totalDurationStr}
                                     musicDir={musicDir}
@@ -870,6 +872,15 @@ function App() {
                             crossfadeDuration={crossfadeDuration}
                             handleCrossfadeChange={handleCrossfadeChange}
                             musicDir={musicDir}
+                        />
+                    )}
+                    {activeTab === 'musicians' && (
+                        <MusiciansView
+                            libraryTracks={libraryTracks}
+                            setActiveTab={setActiveTab}
+                            setSelectedArtist={setSelectedArtist}
+                            setSelectedPlaylist={setSelectedPlaylist}
+                            handlePlayLibraryTrack={handlePlayLibraryTrack}
                         />
                     )}
                 </main>

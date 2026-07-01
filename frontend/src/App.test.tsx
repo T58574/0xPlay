@@ -69,4 +69,15 @@ describe('App Component', () => {
             expect(screen.getByText('Customize your 0xSoundPlayer experience and theme styles')).toBeInTheDocument();
         });
     });
+
+    it('navigates to Musicians view and shows Musicians header', async () => {
+        render(<App />);
+
+        const musiciansButton = screen.getByRole('button', { name: /Musicians/i });
+        fireEvent.click(musiciansButton);
+
+        await waitFor(() => {
+            expect(screen.getByText(/unique artists found in your library/i)).toBeInTheDocument();
+        });
+    });
 });
