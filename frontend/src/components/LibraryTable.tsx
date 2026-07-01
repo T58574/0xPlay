@@ -7,8 +7,6 @@ interface LibraryTableProps {
     activeSlot: 0 | 1;
     tracks: [TrackInfo | null, TrackInfo | null];
     handleHeroPlayClick: () => void;
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
     filteredTracks: TrackInfo[];
     libraryTracks: TrackInfo[];
     currentTrackIndex: number;
@@ -30,8 +28,6 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
     activeSlot,
     tracks,
     handleHeroPlayClick,
-    searchQuery,
-    setSearchQuery,
     filteredTracks,
     libraryTracks,
     currentTrackIndex,
@@ -53,23 +49,6 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
                 <button className="hero-play-button" onClick={handleHeroPlayClick}>
                     {playing[activeSlot] && tracks[activeSlot] ? <PauseIcon /> : <PlayIcon />}
                 </button>
-                
-                <div className="search-bar-container">
-                    <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input 
-                        type="text" 
-                        placeholder="Search in library..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="search-input"
-                    />
-                    {searchQuery && (
-                        <button className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
-                    )}
-                </div>
             </div>
 
             {filteredTracks.length > 0 ? (

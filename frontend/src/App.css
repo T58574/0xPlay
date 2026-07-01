@@ -1384,7 +1384,7 @@ body {
 .create-playlist-sidebar-btn {
     background: transparent;
     border: none;
-    color: #64748B;
+    color: var(--muted-text-color);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1397,14 +1397,14 @@ body {
 
 .create-playlist-sidebar-btn:hover {
     color: var(--accent-color);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--hover-color);
 }
 
 .sidebar-playlist-input-container {
     display: flex;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--surface-color) 40%, transparent);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 4px 8px;
 }
@@ -1413,7 +1413,7 @@ body {
     background: transparent;
     border: none;
     outline: none;
-    color: #ffffff;
+    color: var(--text-color);
     font-size: 12px;
     width: 100%;
     font-family: inherit;
@@ -1522,7 +1522,7 @@ body {
 .track-action-btn {
     background: transparent;
     border: none;
-    color: #64748B;
+    color: var(--muted-text-color);
     cursor: pointer;
     width: 26px;
     height: 26px;
@@ -1539,16 +1539,18 @@ body {
 }
 
 .track-action-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
+    background: var(--hover-color);
+    color: var(--text-color);
 }
 
 .track-action-btn.add-btn:hover {
     color: var(--accent-color);
+    background: var(--accent-bg-glow);
 }
 
 .track-action-btn.remove-btn:hover {
     color: #F43F5E;
+    background: rgba(244, 63, 94, 0.1);
 }
 
 .playlist-dropdown-backdrop {
@@ -1566,10 +1568,11 @@ body {
     bottom: 120%;
     right: 0;
     width: 180px;
-    background: #11101E;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--surface-color) 85%, transparent);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     z-index: 1000;
     padding: 6px 0;
     display: flex;
@@ -1580,16 +1583,16 @@ body {
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1px;
-    color: #64748B;
+    color: var(--muted-text-color);
     padding: 8px 12px;
     text-transform: uppercase;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 4px;
 }
 
 .dropdown-no-playlists {
     font-size: 11px;
-    color: #64748B;
+    color: var(--muted-text-color);
     padding: 12px;
     text-align: center;
 }
@@ -1597,7 +1600,7 @@ body {
 .dropdown-menu-item {
     background: transparent;
     border: none;
-    color: #E2E8F0;
+    color: var(--text-color);
     padding: 8px 12px;
     font-size: 12px;
     font-weight: 500;
@@ -1610,12 +1613,13 @@ body {
 }
 
 .dropdown-menu-item:hover:not(.disabled) {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--hover-color);
     color: var(--accent-color);
 }
 
 .dropdown-menu-item.disabled {
-    color: #64748B;
+    color: var(--muted-text-color);
+    opacity: 0.5;
     cursor: not-allowed;
 }
 

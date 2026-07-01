@@ -210,6 +210,7 @@ if (results.length > 0) {
 * **2026-07-01 (4)**: Implemented a high-performance WebGL fluid wave visualizer under `src/features/visualizer/` (`VisualizerContainer.tsx`, `FluidWaveShader.ts`) inspired by Yandex Music's "My Wave" shader, mapping real-time frequency bands (Bass/Mid/High) to shader displacements and transitioning colors dynamically based on track mood. Added backend mood classification (`DetermineMood`) in `app.go`.
 * **2026-07-01 (5)**: Removed the theme selection panel from the AppHeader component (rendering it strictly in Settings). Added localStorage hook persistence to make the theme configuration persist across player restarts. Fixed the track page background rendering bug by applying background transparent bindings to `.library-main-content`.
 * **2026-07-02**: Redesigned and centered the settings page. Updated layout spacing (`max-width: 720px; margin: 0 auto;`), added glassmorphism panel styles (`color-mix(in srgb, var(--surface-color) 55%, transparent)` with backdrop blurs), set custom cards transitions, refined theme color preview circles borders, and unified text properties to follow the UI design system.
+* **2026-07-02 (2)**: Refactored the track row action buttons and playlist dropdown menu (`.playlist-dropdown-menu`, `.dropdown-menu-item`) to apply consistent glassmorphic styling, borders, and colors. Removed the music cover placeholder square (`.hero-cover`) in `LibraryHero.tsx`. Relocated the search bar input container from `LibraryTable.tsx` to the center of `AppHeader.tsx`.
 
 ---
 

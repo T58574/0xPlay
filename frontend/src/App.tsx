@@ -785,6 +785,8 @@ function App() {
                 setActiveTab={setActiveTab}
                 handleSelectDirectory={OpenMusicDir}
                 handleScan={loadLibrary}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
             />
 
             <div className="app-main-layout">
@@ -822,8 +824,6 @@ function App() {
                                     activeSlot={activeSlot}
                                     tracks={tracks}
                                     handleHeroPlayClick={handleHeroPlayClick}
-                                    searchQuery={searchQuery}
-                                    setSearchQuery={setSearchQuery}
                                     filteredTracks={filteredTracks}
                                     libraryTracks={libraryTracks}
                                     currentTrackIndex={currentTrackIndex}
