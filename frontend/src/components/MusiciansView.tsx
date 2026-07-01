@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TrackInfo } from '../types';
 import { ArtistShape } from './ArtistShape';
 import { PlayIcon } from './Icons';
+import { splitArtists } from '../utils';
 
 interface MusiciansViewProps {
     libraryTracks: TrackInfo[];
@@ -24,11 +25,13 @@ export const MusiciansView: React.FC<MusiciansViewProps> = ({
     const artistGroups = React.useMemo(() => {
         const groups: { [key: string]: TrackInfo[] } = {};
         libraryTracks.forEach(track => {
-            const artist = track.artist || 'Unknown Artist';
-            if (!groups[artist]) {
-                groups[artist] = [];
-            }
-            groups[artist].push(track);
+            const artists = splitArtists(track.artist);
+            artists.forEach(artist => {
+                if (!groups[artist]) {
+                    groups[artist] = [];
+                }
+                groups[artist].push(track);
+            });
         });
         return groups;
     }, [libraryTracks]);

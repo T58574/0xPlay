@@ -35,6 +35,7 @@ import { SettingsView } from './components/SettingsView';
 import { PlaybackBar } from './components/PlaybackBar';
 import { VisualizerContainer } from './features/visualizer/VisualizerContainer';
 import { MusiciansView } from './components/MusiciansView';
+import { splitArtists } from './utils';
 
 function App() {
     const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings' | 'search' | 'musicians'>('library');
@@ -206,7 +207,9 @@ function App() {
         ? libraryTracks.filter(t => playlists.find(p => p.name === selectedPlaylist)?.trackPaths?.includes(t.filePath))
         : libraryTracks;
 
-    const availableArtists = Array.from(new Set(libraryTracks.map(t => t.artist || 'Unknown Artist'))).filter(Boolean).sort();
+    const availableArtists = Array.from(
+        new Set(libraryTracks.flatMap(t => splitArtists(t.artist || 'Unknown Artist')))
+    ).filter(Boolean).sort();
     const availableGenres = Array.from(new Set(libraryTracks.map(t => t.genre || 'Unknown Genre'))).filter(Boolean).sort();
 
     const filteredTracks = currentPlaylistTracks.filter(track => {
@@ -216,7 +219,7 @@ function App() {
         const query = searchQuery.toLowerCase();
         
         const matchesQuery = filename.includes(query) || artist.includes(query) || genre.includes(query);
-        const matchesArtist = !selectedArtist || (track.artist || 'Unknown Artist') === selectedArtist;
+        const matchesArtist = !selectedArtist || splitArtists(track.artist || 'Unknown Artist').includes(selectedArtist);
         const matchesGenre = !selectedGenre || (track.genre || 'Unknown Genre') === selectedGenre;
         
         return matchesQuery && matchesArtist && matchesGenre;
