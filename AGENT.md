@@ -209,6 +209,7 @@ if (results.length > 0) {
 * **2026-07-01 (3)**: Refactored the monolithic frontend structure by decomposing `App.tsx` into a highly-modular component architecture under `src/components/` (`AppHeader`, `LibrarySidebar`, `LibraryHero`, `LibraryTable`, `DeckView`, `SettingsView`, `PlaybackBar`, and `Icons`) and shared TypeScript interfaces (`src/types.ts`). Passed state coordinations via clean React props mappings.
 * **2026-07-01 (4)**: Implemented a high-performance WebGL fluid wave visualizer under `src/features/visualizer/` (`VisualizerContainer.tsx`, `FluidWaveShader.ts`) inspired by Yandex Music's "My Wave" shader, mapping real-time frequency bands (Bass/Mid/High) to shader displacements and transitioning colors dynamically based on track mood. Added backend mood classification (`DetermineMood`) in `app.go`.
 * **2026-07-01 (5)**: Removed the theme selection panel from the AppHeader component (rendering it strictly in Settings). Added localStorage hook persistence to make the theme configuration persist across player restarts. Fixed the track page background rendering bug by applying background transparent bindings to `.library-main-content`.
+* **2026-07-02**: Redesigned and centered the settings page. Updated layout spacing (`max-width: 720px; margin: 0 auto;`), added glassmorphism panel styles (`color-mix(in srgb, var(--surface-color) 55%, transparent)` with backdrop blurs), set custom cards transitions, refined theme color preview circles borders, and unified text properties to follow the UI design system.
 
 ---
 
