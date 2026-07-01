@@ -843,6 +843,11 @@ function App() {
                                     formatTime={formatTime}
                                     OpenMusicDir={OpenMusicDir}
                                     handleSelectAndLoad={handleSelectAndLoad}
+                                    onSelectArtist={(artistName) => {
+                                        setSelectedArtist(artistName);
+                                        setSelectedPlaylist(null);
+                                        setActiveTab('library');
+                                    }}
                                 />
                             </div>
                         </div>

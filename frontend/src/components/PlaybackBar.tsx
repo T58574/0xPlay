@@ -58,8 +58,26 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
                     <div className="playing-meta">
                         <span className="playing-spark"><BoltIcon /></span>
                         <div className="meta-text">
-                            <span className="playing-title">{getFilename(activeTrack.filePath)}</span>
-                            <span className="playing-stats">BPM: {activeTrack.bpm.toFixed(0)} | KEY: {activeTrack.keySignature}</span>
+                            <span 
+                                className="playing-title clickable-copy"
+                                onClick={() => navigator.clipboard.writeText(getFilename(activeTrack.filePath))}
+                                title="Click to copy title"
+                            >
+                                {getFilename(activeTrack.filePath)}
+                            </span>
+                            <span className="playing-stats">
+                                {activeTrack.artist && (
+                                    <span 
+                                        className="playing-artist-copy clickable-copy"
+                                        onClick={() => navigator.clipboard.writeText(activeTrack.artist || '')}
+                                        title="Click to copy artist"
+                                        style={{ marginRight: '8px', color: 'var(--accent-color)', fontWeight: 'bold' }}
+                                    >
+                                        {activeTrack.artist}
+                                    </span>
+                                )}
+                                BPM: {activeTrack.bpm.toFixed(0)} | KEY: {activeTrack.keySignature}
+                            </span>
                         </div>
                     </div>
                 ) : (

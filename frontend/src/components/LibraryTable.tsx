@@ -1,6 +1,7 @@
 import React from 'react';
 import { PlayIcon, PauseIcon, RowPlayIcon, RowPauseIcon, PlusIcon, MusicIcon, FolderIcon, LoadIcon } from './Icons';
 import { TrackInfo, PlaylistInfo } from '../types';
+import { splitArtists } from '../utils';
 
 interface LibraryTableProps {
     playing: [boolean, boolean];
@@ -21,6 +22,7 @@ interface LibraryTableProps {
     formatTime: (sec: number) => string;
     OpenMusicDir: () => void;
     handleSelectAndLoad: (slot: 0 | 1) => void;
+    onSelectArtist?: (artistName: string) => void;
 }
 
 export const LibraryTable: React.FC<LibraryTableProps> = ({
@@ -41,7 +43,8 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
     getFilename,
     formatTime,
     OpenMusicDir,
-    handleSelectAndLoad
+    handleSelectAndLoad,
+    onSelectArtist
 }) => {
     return (
         <div className="library-main-content">
@@ -83,10 +86,45 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
                                             )}
                                         </td>
                                         <td className="track-title-cell">
-                                            <div className="track-title-main">{filename}</div>
+                                            <div 
+                                                className="track-title-main clickable-copy"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigator.clipboard.writeText(filename);
+                                                }}
+                                                title="Click to copy title"
+                                            >
+                                                {filename}
+                                            </div>
                                             {(track.artist || track.genre) && (
                                                 <div className="track-artist-sub">
-                                                    {track.artist || 'Unknown Artist'} • {track.genre || 'Unknown Genre'}
+                                                    {track.artist ? (
+                                                        splitArtists(track.artist).map((art, idx, arr) => (
+                                                            <React.Fragment key={art}>
+                                                                <span 
+                                                                    className="clickable-artist" 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (onSelectArtist) onSelectArtist(art);
+                                                                    }}
+                                                                >
+                                                                    {art}
+                                                                </span>
+                                                                {idx < arr.length - 1 ? ', ' : ''}
+                                                            </React.Fragment>
+                                                        ))
+                                                    ) : (
+                                                        <span 
+                                                            className="clickable-artist"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (onSelectArtist) onSelectArtist('Unknown Artist');
+                                                            }}
+                                                        >
+                                                            Unknown Artist
+                                                        </span>
+                                                    )}
+                                                    {track.genre && ` • ${track.genre}`}
                                                 </div>
                                             )}
                                         </td>

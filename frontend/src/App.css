@@ -2150,3 +2150,22 @@ body {
     border-color: var(--accent-color) !important;
     box-shadow: 0 0 10px var(--accent-bg-glow);
 }
+
+.clickable-artist {
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.clickable-artist:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.clickable-copy {
+    cursor: copy;
+    transition: color 0.15s ease;
+}
+
+.clickable-copy:hover {
+    color: var(--accent-color);
+}
