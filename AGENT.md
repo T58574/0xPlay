@@ -207,3 +207,46 @@ if (results.length > 0) {
 * **2026-07-01**: Removed DJ decks and Search SoundCloud tabs. Replaced the global left sidebar with a top header layout. Moved the settings button to the top-right of the header, and removed the "0xPlay" title. Embedded the playlist and filter categories inside a sidebar in the library view.
 * **2026-07-01 (2)**: Refactored application's theme colors to use five custom semantic UI themes (Modern SaaS, Elevated Neutrals, Fintech & AI Innovation, Classic Trust, Eco-Digital & Wellness) mapping Background, Surface, Text, Border, Accent/Primary, and dynamic Contrast controls.
 * **2026-07-01 (3)**: Refactored the monolithic frontend structure by decomposing `App.tsx` into a highly-modular component architecture under `src/components/` (`AppHeader`, `LibrarySidebar`, `LibraryHero`, `LibraryTable`, `DeckView`, `SettingsView`, `PlaybackBar`, and `Icons`) and shared TypeScript interfaces (`src/types.ts`). Passed state coordinations via clean React props mappings.
+* **2026-07-01 (4)**: Implemented a high-performance WebGL fluid wave visualizer under `src/features/visualizer/` (`VisualizerContainer.tsx`, `FluidWaveShader.ts`) inspired by Yandex Music's "My Wave" shader, mapping real-time frequency bands (Bass/Mid/High) to shader displacements and transitioning colors dynamically based on track mood. Added backend mood classification (`DetermineMood`) in `app.go`.
+
+---
+
+## 7. WebGL Fluid Visualizer & Mood Classification API
+
+### 7.1 Mood Classification Engine (Go)
+The Go backend classifies the track mood on the fly during audio loading and library scanning:
+
+```go
+func DetermineMood(bpm float64, key string, genre string) string
+```
+
+**Classification Rules**:
+*   *Chill Genre Match*: "Lofi", "Ambient", "Chill", "Classical", "Relax" $\rightarrow$ `chill`
+*   *High BPM (>110) & Heavy/Electronic Genre Match*: "Metal", "Rock", "EDM", "Dance", "Electronic" $\rightarrow$ `energetic`
+*   *Heavy/Electronic Genre Match*: $\rightarrow$ `dark`
+*   *High BPM ($\ge$ 125)*: Minor key $\rightarrow$ `dark`, Major key $\rightarrow$ `energetic`
+*   *Mid BPM (100 - 125)*: Minor key $\rightarrow$ `chill`, Major key $\rightarrow$ `happy`
+*   *Low BPM (<100)*: Minor key $\rightarrow$ `calm`, Major key $\rightarrow$ `peaceful`
+
+### 7.2 WebGL Fluid Wave Visualizer (Frontend)
+The isolated feature module `src/features/visualizer/` handles raw WebGL fluid blob drawing:
+
+#### Component Signature:
+```typescript
+interface VisualizerContainerProps {
+    activeSlot: 0 | 1;
+    tracks: [TrackInfo | null, TrackInfo | null];
+    playing: [boolean, boolean];
+    currentTheme: string;
+}
+
+export const VisualizerContainer: React.FC<VisualizerContainerProps>
+```
+
+#### Uniform Mapping & Lerp:
+*   `u_bass`: average of spectrum bins $0 - 6$ (controls scale and core vibration amplitude).
+*   `u_mid`: average of spectrum bins $7 - 24$ (controls edge turbulence/roughness).
+*   `u_high`: average of spectrum bins $25 - 63$ (controls turbulence speed and roughness).
+*   Color Uniforms: `u_colorBg`, `u_colorAccent`, `u_colorSurface`, `u_colorMuted` (lerped smoothly on every frame towards target palette color vectors).
+*   Palette Transitions: Maps track mood to target palettes (`energetic` $\rightarrow$ `saas`, `dark` $\rightarrow$ `fintech`, `chill` $\rightarrow$ `eco`, `happy` $\rightarrow$ `neutrals`, `calm`/`peaceful` $\rightarrow$ `trust`). Falls back to active UI theme colors when no track is active/playing.
+*   GPU-acceleration: Renders a single quad with custom fragment shader utilizing 2D fractional Brownian motion (FBM) noise and domain warping to achieve liquid-like movement at 60 FPS.

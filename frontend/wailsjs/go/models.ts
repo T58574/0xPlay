@@ -40,6 +40,7 @@ export namespace main {
 	    waveform: number[];
 	    artist: string;
 	    genre: string;
+	    mood: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TrackMetadata(source);
@@ -54,6 +55,7 @@ export namespace main {
 	        this.waveform = source["waveform"];
 	        this.artist = source["artist"];
 	        this.genre = source["genre"];
+	        this.mood = source["mood"];
 	    }
 	}
 

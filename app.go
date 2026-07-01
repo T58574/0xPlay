@@ -93,9 +93,44 @@ func (a *App) LoadTrack(slot int, filePath string) (TrackMetadata, error) {
 		return TrackMetadata{}, fmt.Errorf("failed to load track")
 	}
 	meta := GetTrackMetadata(slot, filePath)
-	Log(LogInfo, "app", "LoadTrack OK slot=%d duration=%.3fs bpm=%.1f key=%s waveform=%d",
-		slot, meta.DurationSec, meta.BPM, meta.KeySignature, len(meta.Waveform))
+	artist, genre := extractTagsOrFilename(filePath)
+	meta.Artist = artist
+	meta.Genre = genre
+	meta.Mood = DetermineMood(meta.BPM, meta.KeySignature, genre)
+	Log(LogInfo, "app", "LoadTrack OK slot=%d duration=%.3fs bpm=%.1f key=%s waveform=%d mood=%s",
+		slot, meta.DurationSec, meta.BPM, meta.KeySignature, len(meta.Waveform), meta.Mood)
 	return meta, nil
+}
+
+func DetermineMood(bpm float64, key string, genre string) string {
+	genre = strings.ToLower(genre)
+	key = strings.ToUpper(key)
+	if strings.Contains(genre, "lofi") || strings.Contains(genre, "ambient") || strings.Contains(genre, "chill") || strings.Contains(genre, "classical") || strings.Contains(genre, "relax") {
+		return "chill"
+	}
+	if strings.Contains(genre, "metal") || strings.Contains(genre, "rock") || strings.Contains(genre, "edm") || strings.Contains(genre, "dance") || strings.Contains(genre, "electronic") || strings.Contains(genre, "synthwave") {
+		if bpm > 110 {
+			return "energetic"
+		}
+		return "dark"
+	}
+	isMinor := strings.HasSuffix(key, "A")
+	if bpm >= 125 {
+		if isMinor {
+			return "dark"
+		}
+		return "energetic"
+	} else if bpm >= 100 {
+		if isMinor {
+			return "chill"
+		}
+		return "happy"
+	} else {
+		if isMinor {
+			return "calm"
+		}
+		return "peaceful"
+	}
 }
 
 func (a *App) Play(slot int) {
@@ -201,6 +236,7 @@ type CacheEntry struct {
 	ModTime      int64     `json:"modTime"`
 	Artist       string    `json:"artist"`
 	Genre        string    `json:"genre"`
+	Mood         string    `json:"mood"`
 }
 
 func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
@@ -241,6 +277,12 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 						Waveform:     cached.Waveform,
 						Artist:       cached.Artist,
 						Genre:        cached.Genre,
+						Mood:         cached.Mood,
+					}
+					if meta.Mood == "" {
+						meta.Mood = DetermineMood(meta.BPM, meta.KeySignature, meta.Genre)
+						cached.Mood = meta.Mood
+						cacheMap[path] = cached
 					}
 					activeCacheList = append(activeCacheList, cached)
 				} else {
@@ -248,6 +290,7 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 					artist, genre := extractTagsOrFilename(path)
 					meta.Artist = artist
 					meta.Genre = genre
+					meta.Mood = DetermineMood(meta.BPM, meta.KeySignature, genre)
 					newCacheEntry := CacheEntry{
 						FilePath:     meta.FilePath,
 						DurationSec:  meta.DurationSec,
@@ -258,6 +301,7 @@ func (a *App) ScanMusicDir() ([]TrackMetadata, error) {
 						ModTime:      info.ModTime().Unix(),
 						Artist:       meta.Artist,
 						Genre:        meta.Genre,
+						Mood:         meta.Mood,
 					}
 					cacheMap[path] = newCacheEntry
 					activeCacheList = append(activeCacheList, newCacheEntry)

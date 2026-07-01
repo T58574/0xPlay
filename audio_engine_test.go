@@ -380,3 +380,29 @@ func TestAnalyzeFile(t *testing.T) {
 		t.Errorf("expected non-empty waveform")
 	}
 }
+
+func TestDetermineMood(t *testing.T) {
+	tests := []struct {
+		bpm    float64
+		key    string
+		genre  string
+		expect string
+	}{
+		{80, "8A", "lofi", "chill"},
+		{130, "8A", "metal", "energetic"},
+		{90, "8A", "electronic", "dark"},
+		{135, "8A", "pop", "dark"},
+		{135, "8B", "pop", "energetic"},
+		{110, "8A", "pop", "chill"},
+		{110, "8B", "pop", "happy"},
+		{90, "8A", "pop", "calm"},
+		{90, "8B", "pop", "peaceful"},
+	}
+
+	for _, tc := range tests {
+		res := DetermineMood(tc.bpm, tc.key, tc.genre)
+		if res != tc.expect {
+			t.Errorf("DetermineMood(%f, %s, %s) expected %s, got %s", tc.bpm, tc.key, tc.genre, tc.expect, res)
+		}
+	}
+}

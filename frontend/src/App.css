@@ -22,6 +22,8 @@ body {
     width: 100vw;
     background: var(--bg-color);
     transition: background-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .app-main-layout {
@@ -269,9 +271,10 @@ body {
 
 .content-panel {
     flex: 1;
-    background: var(--bg-color);
+    background: transparent;
     overflow-y: auto;
-    transition: background-color 0.2s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .library-view {
@@ -282,7 +285,7 @@ body {
 
 .library-hero {
     padding: 40px;
-    background: linear-gradient(180deg, var(--surface-color) 0%, var(--bg-color) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     gap: 32px;
@@ -627,7 +630,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--surface-color);
+    background: color-mix(in srgb, var(--surface-color) 65%, transparent);
     border: 1px solid var(--border-color);
     border-radius: 20px;
     padding: 24px;

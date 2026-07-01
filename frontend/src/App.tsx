@@ -33,6 +33,7 @@ import { LibraryTable } from './components/LibraryTable';
 import { DeckView } from './components/DeckView';
 import { SettingsView } from './components/SettingsView';
 import { PlaybackBar } from './components/PlaybackBar';
+import { VisualizerContainer } from './features/visualizer/VisualizerContainer';
 
 function App() {
     const [activeTab, setActiveTab] = useState<'library' | 'decks' | 'settings' | 'search'>('library');
@@ -760,6 +761,12 @@ function App() {
 
     return (
         <div className="container">
+            <VisualizerContainer
+                activeSlot={activeSlot}
+                tracks={tracks}
+                playing={playing}
+                currentTheme={currentTheme}
+            />
             <AppHeader
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}

@@ -6,6 +6,7 @@ export interface TrackInfo {
     waveform: number[];
     artist?: string;
     genre?: string;
+    mood?: string;
 }
 
 export interface SoundCloudResult {
