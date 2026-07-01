@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Righteous&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;700;800;900&display=swap');
 
 * {
     box-sizing: border-box;
@@ -9,7 +9,7 @@
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     overflow: hidden;
     user-select: none;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -201,7 +201,7 @@ body {
 }
 
 .brand-logo h2 {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 22px;
     letter-spacing: 2px;
     background: linear-gradient(135deg, #F8FAFC 0%, var(--accent-color, #22C55E) 100%);
@@ -328,7 +328,7 @@ body {
 }
 
 .hero-title {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 48px;
     font-weight: 400;
     letter-spacing: 1px;
@@ -652,7 +652,7 @@ body {
 }
 
 .deck-title {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 16px;
     letter-spacing: 2px;
     color: var(--muted-text-color);
@@ -720,6 +720,7 @@ body {
 }
 
 .stat-val {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 15px;
     font-weight: 800;
 }
@@ -906,6 +907,7 @@ body {
 }
 
 .playing-stats {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     color: #64748B;
@@ -971,10 +973,11 @@ body {
 }
 
 .progress-time {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     font-weight: 600;
     color: #64748B;
-    width: 40px;
+    width: 45px;
 }
 
 .progress-time:last-child {
@@ -1183,7 +1186,7 @@ body {
 }
 
 .settings-header h1 {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 36px;
     letter-spacing: 2px;
     background: linear-gradient(135deg, var(--text-color) 0%, var(--accent-color) 100%);
@@ -1215,7 +1218,7 @@ body {
 }
 
 .settings-section-title {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 15px;
     letter-spacing: 1.5px;
     color: var(--accent-color);
@@ -1865,7 +1868,7 @@ body {
 }
 
 .search-header h1 {
-    font-family: 'Righteous', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     font-size: 32px;
     color: #ffffff;
 }
@@ -2168,4 +2171,12 @@ body {
 
 .clickable-copy:hover {
     color: var(--accent-color);
+}
+
+.tracks-table td:nth-child(1),
+.tracks-table td:nth-child(3),
+.tracks-table td:nth-child(4),
+.tracks-table td:nth-child(5) {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
 }
