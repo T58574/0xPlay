@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-	"github.com/wailsapp/wails/v2/pkg/options"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -76,8 +75,8 @@ func TestAudioEngine(t *testing.T) {
 	defer CleanupAudioEngine()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	meta, err := app.LoadTrack(0, wavPath)
 	if err != nil {
@@ -150,25 +149,12 @@ func TestAudioEngine(t *testing.T) {
 	app.OpenMusicDir()
 }
 
-func TestMainFunc(t *testing.T) {
-	origWailsRun := wailsRun
-	defer func() { wailsRun = origWailsRun }()
 
-	wailsRun = func(opt *options.App) error {
-		return nil
-	}
-	main()
-
-	wailsRun = func(opt *options.App) error {
-		return fmt.Errorf("mock error")
-	}
-	main()
-}
 
 func TestAppMocks(t *testing.T) {
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	origOpenFileDialog := openFileDialog
 	defer func() { openFileDialog = origOpenFileDialog }()
@@ -291,10 +277,10 @@ func TestLogFromJS(t *testing.T) {
 	app := NewApp()
 	ctx := context.Background()
 
-	// We call startup but wait, startup also calls InitLogger and Log.
+	// We call Startup but wait, Startup also calls InitLogger and Log.
 	// We already called InitLogger, which is safe.
-	app.startup(ctx)
-	defer app.shutdown(ctx)
+	app.Startup(ctx)
+	defer app.Shutdown(ctx)
 
 	// Clear the log file so we only see our LogFromJS calls
 	os.WriteFile(logFile, []byte(""), 0600)
@@ -315,8 +301,8 @@ func TestMalformedCache(t *testing.T) {
 	defer func() { osUserHomeDir = origHomeDir }()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	dir, err := app.GetMusicDir()
 	if err != nil {

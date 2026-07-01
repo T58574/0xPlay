@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) startup(ctx context.Context) {
+func (a *App) Startup(ctx context.Context) {
 	InitLogger()
 	Log(LogInfo, "app", "=== 0xSoundPlayer startup ===")
 	a.ctx = ctx
@@ -79,7 +79,7 @@ func (a *App) broadcastSpectrum() {
 	}
 }
 
-func (a *App) shutdown(ctx context.Context) {
+func (a *App) Shutdown(ctx context.Context) {
 	Log(LogInfo, "app", "=== 0xSoundPlayer shutdown ===")
 	CleanupAudioEngine()
 	CloseLogger()

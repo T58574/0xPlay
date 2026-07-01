@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -19,8 +19,8 @@ func TestPlaylists(t *testing.T) {
 	defer func() { osUserHomeDir = origHomeDir }()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	playlists, err := app.GetPlaylists()
 	if err != nil {
@@ -119,8 +119,8 @@ func TestMalformedPlaylistJson(t *testing.T) {
 	defer func() { osUserHomeDir = origHomeDir }()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	dir, err := app.GetMusicDir()
 	if err != nil {
@@ -147,8 +147,8 @@ func TestPlaylistsErrorPaths(t *testing.T) {
 	defer func() { osUserHomeDir = origHomeDir }()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	_, err := app.GetPlaylists()
 	if err == nil {
@@ -189,8 +189,8 @@ func TestAppGetSpectrum(t *testing.T) {
 	defer CleanupAudioEngine()
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	spectrum := app.GetSpectrum(0)
 	if len(spectrum) != 64 {
@@ -207,8 +207,8 @@ func TestSelectAudioFileError(t *testing.T) {
 	}
 
 	app := NewApp()
-	app.startup(nil)
-	defer app.shutdown(nil)
+	app.Startup(nil)
+	defer app.Shutdown(nil)
 
 	_, err := app.SelectAudioFile()
 	if err == nil {

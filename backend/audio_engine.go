@@ -1,4 +1,4 @@
-package main
+package backend
 
 /*
 #cgo CXXFLAGS: -std=c++11
