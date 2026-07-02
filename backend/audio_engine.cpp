@@ -90,6 +90,53 @@ struct TrackState {
 
 static ma_device g_device;
 static bool g_device_initialized = false;
+static std::string g_device_id_hex = "default";
+
+static std::string device_id_to_hex(const ma_device_id& id) {
+    char buf[1024];
+    char* p = buf;
+    const unsigned char* bytes = (const unsigned char*)&id;
+    for (size_t i = 0; i < sizeof(ma_device_id); i++) {
+        p += sprintf(p, "%02x", bytes[i]);
+    }
+    return std::string(buf);
+}
+
+static ma_device_id hex_to_device_id(const std::string& hex) {
+    ma_device_id id;
+    memset(&id, 0, sizeof(ma_device_id));
+    if (hex.length() != sizeof(ma_device_id) * 2) {
+        return id;
+    }
+    unsigned char* bytes = (unsigned char*)&id;
+    for (size_t i = 0; i < sizeof(ma_device_id); i++) {
+        unsigned int val;
+        sscanf(hex.substr(i * 2, 2).c_str(), "%x", &val);
+        bytes[i] = (unsigned char)val;
+    }
+    return id;
+}
+
+static std::string json_escape(const std::string& str) {
+    std::string escaped = "\"";
+    for (char c : str) {
+        if (c == '\\') escaped += "\\\\";
+        else if (c == '"') escaped += "\\\"";
+        else if (c == '\n') escaped += "\\n";
+        else if (c == '\r') escaped += "\\r";
+        else if (c == '\t') escaped += "\\t";
+        else if ((unsigned char)c < 32) {
+            char buf[8];
+            sprintf(buf, "\\u%04x", (int)c);
+            escaped += buf;
+        } else {
+            escaped += c;
+        }
+    }
+    escaped += "\"";
+    return escaped;
+}
+
 static TrackState g_tracks[2];
 static bool g_automix_enabled = false;
 static int g_mixer_state = 0;
@@ -650,6 +697,14 @@ int init_audio_engine(int sample_rate, int channels) {
     config.sampleRate = sample_rate;
     config.dataCallback = audio_callback;
 
+    ma_device_id dev_id;
+    if (g_device_id_hex != "default") {
+        dev_id = hex_to_device_id(g_device_id_hex);
+        config.playback.pDeviceID = &dev_id;
+    } else {
+        config.playback.pDeviceID = NULL;
+    }
+
     if (ma_device_init(NULL, &config, &g_device) != MA_SUCCESS) {
         ENGINE_LOGE("init_audio_engine: ma_device_init FAILED");
         return 0;
@@ -892,4 +947,41 @@ TrackMetadataC analyze_file(const char* file_path) {
         memcpy(meta.waveformData, wf.data(), wf.size() * sizeof(float));
     }
     return meta;
+}
+
+const char* get_audio_devices_json() {
+    ma_context context;
+    if (ma_context_init(NULL, 0, NULL, &context) != MA_SUCCESS) {
+        return strdup("[]");
+    }
+    ma_device_info* pPlaybackDeviceInfos;
+    ma_uint32 playbackDeviceCount;
+    if (ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL) != MA_SUCCESS) {
+        ma_context_uninit(&context);
+        return strdup("[]");
+    }
+    std::string json = "[";
+    json += "{\"name\":\"Default Device\",\"id\":\"default\",\"isDefault\":true}";
+    for (ma_uint32 i = 0; i < playbackDeviceCount; i++) {
+        json += ",{";
+        json += "\"name\":" + json_escape(pPlaybackDeviceInfos[i].name) + ",";
+        json += "\"id\":\"" + device_id_to_hex(pPlaybackDeviceInfos[i].id) + "\",";
+        json += "\"isDefault\":" + std::string(pPlaybackDeviceInfos[i].isDefault ? "true" : "false");
+        json += "}";
+    }
+    json += "]";
+    ma_context_uninit(&context);
+    return strdup(json.c_str());
+}
+
+int set_audio_device(const char* device_id_hex) {
+    ENGINE_LOGI("set_audio_device: %s", device_id_hex);
+    g_device_id_hex = device_id_hex;
+    if (g_device_initialized) {
+        int sr = g_sample_rate;
+        int ch = g_channels;
+        cleanup_audio_engine();
+        return init_audio_engine(sr, ch);
+    }
+    return 1;
 }

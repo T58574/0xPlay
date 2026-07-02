@@ -176,3 +176,15 @@ func GetTrackSpectrum(slot int, maxSize int) []float32 {
 	}
 	return out
 }
+
+func GetAudioDevices() string {
+	cStr := C.get_audio_devices_json()
+	defer C.free(unsafe.Pointer(cStr))
+	return C.GoString(cStr)
+}
+
+func SetAudioDevice(deviceId string) bool {
+	cStr := C.CString(deviceId)
+	defer C.free(unsafe.Pointer(cStr))
+	return C.set_audio_device(cStr) != 0
+}

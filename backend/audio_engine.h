@@ -30,6 +30,8 @@ void set_crossfade_duration(double duration_sec);
 void free_track_metadata(TrackMetadataC metadata);
 TrackMetadataC analyze_file(const char* file_path);
 int get_track_spectrum(int slot, float* out_buffer, int max_size);
+const char* get_audio_devices_json();
+int set_audio_device(const char* device_id_hex);
 
 #ifdef __cplusplus
 }

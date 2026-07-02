@@ -22,7 +22,9 @@ import {
     CreatePlaylist,
     DeletePlaylist,
     AddTrackToPlaylist,
-    RemoveTrackFromPlaylist
+    RemoveTrackFromPlaylist,
+    GetAudioDevices,
+    SetAudioDevice
 } from "../wailsjs/go/backend/App";
 
 import { TrackInfo, PlaylistInfo } from './types';
@@ -61,6 +63,16 @@ function App() {
     });
     const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const toastTimeoutRef = useRef<any>(null);
+    const [audioDevices, setAudioDevices] = useState<{name: string, id: string, isDefault: boolean}[]>([]);
+    const [selectedDevice, setSelectedDevice] = useState<string>(() => {
+        try {
+            return localStorage.getItem('soundplayer_device') || 'default';
+        } catch {
+            return 'default';
+        }
+    });
 
     const themes = {
         saas: {
@@ -147,7 +159,19 @@ function App() {
     const [tracks, setTracks] = useState<[TrackInfo | null, TrackInfo | null]>([null, null]);
     const [playing, setPlaying] = useState<[boolean, boolean]>([false, false]);
     const [positions, setPositions] = useState<[number, number]>([0, 0]);
-    const [volumes, setVolumes] = useState<[number, number]>([1.0, 1.0]);
+    const [volumes, setVolumes] = useState<[number, number]>(() => {
+        try {
+            const val = localStorage.getItem('soundplayer_volume');
+            if (val) {
+                const parsed = JSON.parse(val);
+                if (Array.isArray(parsed) && parsed.length === 2) {
+                    return [Number(parsed[0]), Number(parsed[1])];
+                }
+            }
+        } catch {
+        }
+        return [0.8, 0.8];
+    });
     const [tempos, setTempos] = useState<[number, number]>([1.0, 1.0]);
     const [pitches, setPitches] = useState<[number, number]>([0.0, 0.0]);
     const [autoMix, setAutoMix] = useState<boolean>(false);
@@ -482,12 +506,52 @@ function App() {
     handleNextRef.current = handleNext;
     handleLoadDeckRef.current = handleLoadDeck;
 
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setToastMessage(`Copied ${label}: "${text}"`);
+            if (toastTimeoutRef.current) {
+                clearTimeout(toastTimeoutRef.current);
+            }
+            toastTimeoutRef.current = setTimeout(() => {
+                setToastMessage(null);
+            }, 2500);
+        }).catch(err => {
+            uiLog('ERROR', `Failed to copy: ${String(err)}`);
+        });
+    };
+
+    const handleDeviceChange = async (deviceId: string) => {
+        uiLog('INFO', `handleDeviceChange: ${deviceId}`);
+        const ok = await SetAudioDevice(deviceId);
+        if (ok) {
+            setSelectedDevice(deviceId);
+            try {
+                localStorage.setItem('soundplayer_device', deviceId);
+            } catch {
+            }
+            const name = audioDevices.find(d => d.id === deviceId)?.name || 'Default Device';
+            setToastMessage(`Audio output routed to: ${name}`);
+            if (toastTimeoutRef.current) {
+                clearTimeout(toastTimeoutRef.current);
+            }
+            toastTimeoutRef.current = setTimeout(() => {
+                setToastMessage(null);
+            }, 3000);
+        } else {
+            uiLog('ERROR', `Failed to route audio output to ${deviceId}`);
+        }
+    };
+
     const handleVolume = async (slot: number, val: number) => {
         const updated = [...volumes] as [number, number];
         updated[slot] = val;
         setVolumes(updated);
         uiLog('INFO', `handleVolume slot=${slot} vol=${val.toFixed(2)}`);
         await SetVolume(slot, val);
+        try {
+            localStorage.setItem('soundplayer_volume', JSON.stringify(updated));
+        } catch {
+        }
     };
 
     const handleTempo = async (slot: number, val: number) => {
@@ -537,6 +601,18 @@ function App() {
     useEffect(() => {
         loadLibrary();
         loadPlaylists();
+        SetVolume(0, volumes[0]).catch(() => {});
+        SetVolume(1, volumes[1]).catch(() => {});
+        GetAudioDevices().then((list) => {
+            setAudioDevices(list || []);
+        }).catch((err) => {
+            uiLog('ERROR', `Failed to load audio devices: ${String(err)}`);
+        });
+        if (selectedDevice && selectedDevice !== 'default') {
+            SetAudioDevice(selectedDevice).catch((err) => {
+                uiLog('ERROR', `Failed to set audio device ${selectedDevice}: ${String(err)}`);
+            });
+        }
     }, []);
 
     useEffect(() => {
@@ -848,6 +924,7 @@ function App() {
                                         setSelectedPlaylist(null);
                                         setActiveTab('library');
                                     }}
+                                    copyToClipboard={copyToClipboard}
                                 />
                             </div>
                         </div>
@@ -880,6 +957,9 @@ function App() {
                             crossfadeDuration={crossfadeDuration}
                             handleCrossfadeChange={handleCrossfadeChange}
                             musicDir={musicDir}
+                            audioDevices={audioDevices}
+                            selectedDevice={selectedDevice}
+                            handleDeviceChange={handleDeviceChange}
                         />
                     )}
                     {activeTab === 'musicians' && (
@@ -915,7 +995,15 @@ function App() {
                 handleToggleAutoMix={handleToggleAutoMix}
                 formatTime={formatTime}
                 getFilename={getFilename}
+                copyToClipboard={copyToClipboard}
             />
+
+            {toastMessage && (
+                <div className="toast-notification">
+                    <span className="toast-icon">✓</span>
+                    <span className="toast-text">{toastMessage}</span>
+                </div>
+            )}
         </div>
     );
 }

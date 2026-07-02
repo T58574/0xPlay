@@ -1,5 +1,21 @@
 export namespace backend {
 	
+	export class AudioDevice {
+	    name: string;
+	    id: string;
+	    isDefault: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AudioDevice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.id = source["id"];
+	        this.isDefault = source["isDefault"];
+	    }
+	}
 	export class Playlist {
 	    name: string;
 	    trackPaths: string[];

@@ -335,6 +335,26 @@ func (a *App) OpenMusicDir() {
 	}
 }
 
+type AudioDevice struct {
+	Name      string `json:"name"`
+	ID        string `json:"id"`
+	IsDefault bool   `json:"isDefault"`
+}
+
+func (a *App) GetAudioDevices() ([]AudioDevice, error) {
+	jsonStr := GetAudioDevices()
+	var list []AudioDevice
+	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (a *App) SetAudioDevice(deviceId string) bool {
+	Log(LogInfo, "app", "SetAudioDevice: %s", deviceId)
+	return SetAudioDevice(deviceId)
+}
+
 func (a *App) LogFromJS(level string, message string) {
 	var logLevel LogLevel
 	switch level {

@@ -13,7 +13,7 @@ vi.mock('../wailsjs/go/backend/App', () => ({
     Play: vi.fn(),
     Pause: vi.fn(),
     Seek: vi.fn(),
-    SetVolume: vi.fn(),
+    SetVolume: vi.fn().mockResolvedValue(undefined),
     SetTempo: vi.fn(),
     SetPitch: vi.fn(),
     GetPosition: vi.fn(),
@@ -33,6 +33,8 @@ vi.mock('../wailsjs/go/backend/App', () => ({
     RemoveTrackFromPlaylist: vi.fn().mockResolvedValue(undefined),
     SearchSoundCloud: vi.fn().mockResolvedValue([]),
     DownloadFromSoundCloud: vi.fn().mockResolvedValue(undefined),
+    GetAudioDevices: vi.fn().mockResolvedValue([]),
+    SetAudioDevice: vi.fn().mockResolvedValue(true),
 }));
 
 describe('App Component', () => {

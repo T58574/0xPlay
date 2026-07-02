@@ -1,6 +1,12 @@
 import React from 'react';
 import { ThemeConfig } from '../types';
 
+interface AudioDevice {
+    name: string;
+    id: string;
+    isDefault: boolean;
+}
+
 interface SettingsViewProps {
     themes: Record<string, ThemeConfig>;
     currentTheme: string;
@@ -8,6 +14,9 @@ interface SettingsViewProps {
     crossfadeDuration: number;
     handleCrossfadeChange: (val: number) => Promise<void>;
     musicDir: string;
+    audioDevices: AudioDevice[];
+    selectedDevice: string;
+    handleDeviceChange: (id: string) => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -16,7 +25,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setCurrentTheme,
     crossfadeDuration,
     handleCrossfadeChange,
-    musicDir
+    musicDir,
+    audioDevices,
+    selectedDevice,
+    handleDeviceChange
 }) => {
     return (
         <div className="settings-view">
@@ -78,6 +90,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             }}
                         />
                         <span className="settings-item-badge">{crossfadeDuration}s</span>
+                    </div>
+                </div>
+
+                <div className="settings-item" style={{ marginTop: '24px' }}>
+                    <div className="settings-item-info">
+                        <span className="settings-item-label">Audio Output Device</span>
+                        <span className="settings-item-desc">Route playback audio stream to a custom hardware device.</span>
+                    </div>
+                    <div className="settings-item-control">
+                        <select
+                            value={selectedDevice}
+                            onChange={(e) => handleDeviceChange(e.target.value)}
+                            className="settings-device-select"
+                        >
+                            {audioDevices.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                    {d.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </section>

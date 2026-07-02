@@ -23,6 +23,7 @@ interface PlaybackBarProps {
     handleToggleAutoMix: () => void;
     formatTime: (sec: number) => string;
     getFilename: (path: string) => string;
+    copyToClipboard?: (text: string, label: string) => void;
 }
 
 export const PlaybackBar: React.FC<PlaybackBarProps> = ({
@@ -45,7 +46,8 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
     autoMix,
     handleToggleAutoMix,
     formatTime,
-    getFilename
+    getFilename,
+    copyToClipboard
 }) => {
     const activeTrack = tracks[activeSlot];
     const duration = activeTrack?.durationSec ?? 0;
@@ -60,7 +62,14 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
                         <div className="meta-text">
                             <span 
                                 className="playing-title clickable-copy"
-                                onClick={() => navigator.clipboard.writeText(getFilename(activeTrack.filePath))}
+                                onClick={() => {
+                                    const title = getFilename(activeTrack.filePath);
+                                    if (copyToClipboard) {
+                                        copyToClipboard(title, 'title');
+                                    } else {
+                                        navigator.clipboard.writeText(title);
+                                    }
+                                }}
                                 title="Click to copy title"
                             >
                                 {getFilename(activeTrack.filePath)}
@@ -69,7 +78,14 @@ export const PlaybackBar: React.FC<PlaybackBarProps> = ({
                                 {activeTrack.artist && (
                                     <span 
                                         className="playing-artist-copy clickable-copy"
-                                        onClick={() => navigator.clipboard.writeText(activeTrack.artist || '')}
+                                        onClick={() => {
+                                            const art = activeTrack.artist || '';
+                                            if (copyToClipboard) {
+                                                copyToClipboard(art, 'artist');
+                                            } else {
+                                                navigator.clipboard.writeText(art);
+                                            }
+                                        }}
                                         title="Click to copy artist"
                                         style={{ marginRight: '8px', color: 'var(--accent-color)', fontWeight: 'bold' }}
                                     >

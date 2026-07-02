@@ -10,6 +10,8 @@ export function DeletePlaylist(arg1:string):Promise<void>;
 
 export function DownloadFromSoundCloud(arg1:string):Promise<void>;
 
+export function GetAudioDevices():Promise<Array<backend.AudioDevice>>;
+
 export function GetMusicDir():Promise<string>;
 
 export function GetPlaylists():Promise<Array<backend.Playlist>>;
@@ -41,6 +43,8 @@ export function SearchSoundCloud(arg1:string):Promise<Array<backend.SoundCloudRe
 export function Seek(arg1:number,arg2:number):Promise<void>;
 
 export function SelectAudioFile():Promise<string>;
+
+export function SetAudioDevice(arg1:string):Promise<boolean>;
 
 export function SetCrossfadeDuration(arg1:number):Promise<void>;
 

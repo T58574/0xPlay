@@ -23,6 +23,7 @@ interface LibraryTableProps {
     OpenMusicDir: () => void;
     handleSelectAndLoad: (slot: 0 | 1) => void;
     onSelectArtist?: (artistName: string) => void;
+    copyToClipboard?: (text: string, label: string) => void;
 }
 
 export const LibraryTable: React.FC<LibraryTableProps> = ({
@@ -44,17 +45,26 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
     formatTime,
     OpenMusicDir,
     handleSelectAndLoad,
-    onSelectArtist
+    onSelectArtist,
+    copyToClipboard
 }) => {
+    const sortedTracks = filteredTracks;
+
     return (
         <div className="library-main-content">
             <div className="library-controls-bar">
                 <button className="hero-play-button" onClick={handleHeroPlayClick}>
                     {playing[activeSlot] && tracks[activeSlot] ? <PauseIcon /> : <PlayIcon />}
                 </button>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <button className="sidebar-btn" onClick={OpenMusicDir}>
+                        <FolderIcon />
+                        <span>Open Music Dir</span>
+                    </button>
+                </div>
             </div>
 
-            {filteredTracks.length > 0 ? (
+            {sortedTracks.length > 0 ? (
                 <div className="tracks-list-container">
                     <table className="tracks-table">
                         <thead>
@@ -68,15 +78,14 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTracks.map((track) => {
+                            {sortedTracks.map((track) => {
                                 const filename = getFilename(track.filePath);
-                                const originalIndex = libraryTracks.findIndex(t => t.filePath === track.filePath);
-                                const isCurrent = currentTrackIndex === originalIndex;
+                                const isCurrent = tracks[activeSlot]?.filePath === track.filePath;
                                 return (
                                     <tr 
                                         key={track.filePath} 
                                         className={`track-row ${isCurrent ? 'current' : ''}`}
-                                        onClick={() => handlePlayLibraryTrack(originalIndex)}
+                                        onClick={() => handlePlayLibraryTrack(libraryTracks.findIndex(t => t.filePath === track.filePath))}
                                     >
                                         <td>
                                             {isCurrent && playing[activeSlot] ? (
@@ -90,7 +99,11 @@ export const LibraryTable: React.FC<LibraryTableProps> = ({
                                                 className="track-title-main clickable-copy"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    navigator.clipboard.writeText(filename);
+                                                    if (copyToClipboard) {
+                                                        copyToClipboard(filename, 'title');
+                                                    } else {
+                                                        navigator.clipboard.writeText(filename);
+                                                    }
                                                 }}
                                                 title="Click to copy title"
                                             >

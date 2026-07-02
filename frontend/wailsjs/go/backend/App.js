@@ -18,6 +18,10 @@ export function DownloadFromSoundCloud(arg1) {
   return window['go']['backend']['App']['DownloadFromSoundCloud'](arg1);
 }
 
+export function GetAudioDevices() {
+  return window['go']['backend']['App']['GetAudioDevices']();
+}
+
 export function GetMusicDir() {
   return window['go']['backend']['App']['GetMusicDir']();
 }
@@ -80,6 +84,10 @@ export function Seek(arg1, arg2) {
 
 export function SelectAudioFile() {
   return window['go']['backend']['App']['SelectAudioFile']();
+}
+
+export function SetAudioDevice(arg1) {
+  return window['go']['backend']['App']['SetAudioDevice'](arg1);
 }
 
 export function SetCrossfadeDuration(arg1) {
